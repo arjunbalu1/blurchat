@@ -1,0 +1,10 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "pnpm nx build api"
+  },
+  "deploy": {
+    "startCommand": "node apps/api/dist/main.js",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
