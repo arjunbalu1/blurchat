@@ -1,0 +1,43 @@
+# Dependabot: automated dependency-update PRs.
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates
+#
+# Notes for this repo:
+# - "npm" ecosystem covers pnpm too (Dependabot reads pnpm-lock.yaml).
+# - Grouping reduces PR noise: one weekly PR per group instead of per package.
+# - github-actions ecosystem will auto-PR new versions of actions/checkout,
+#   actions/setup-node, pnpm/action-setup, nrwl/nx-set-shas, etc.
+
+version: 2
+updates:
+  # JS / TS dependencies (pnpm-aware via pnpm-lock.yaml)
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 5
+    groups:
+      nx:
+        patterns:
+          - 'nx'
+          - '@nx/*'
+      nestjs:
+        patterns:
+          - '@nestjs/*'
+      typescript:
+        patterns:
+          - 'typescript'
+          - '@types/*'
+          - 'typescript-eslint'
+          - 'ts-*'
+      eslint:
+        patterns:
+          - 'eslint'
+          - 'eslint-*'
+          - '@eslint/*'
+
+  # GitHub Actions workflow dependencies (actions/*, pnpm/*, nrwl/*, github/*)
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 5

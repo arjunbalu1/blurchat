@@ -23,14 +23,14 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0  # nx affected needs git history to diff
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         # version comes from the packageManager field in package.json (pnpm@11.1.3)
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc   # → Node 22
           cache: pnpm
@@ -38,7 +38,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # Set base/head SHAs so `nx affected` knows what changed
-      - uses: nrwl/nx-set-shas@v4
+      - uses: nrwl/nx-set-shas@v5
 
       # Fail CI if TypeScript project references are stale
       - run: pnpm nx sync:check
@@ -50,3 +50,18 @@ jobs:
       # an auto-fix PR. `if: always()` so it runs even when previous steps failed.
       - run: pnpm exec nx fix-ci
         if: always()
+
+  # Supply-chain check on PRs: fails if a PR introduces a dependency with a
+  # known CVE at "high" severity or above. Runs only on pull_request events.
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write   # lets the action comment a summary on the PR
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/dependency-review-action@v5
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: always
