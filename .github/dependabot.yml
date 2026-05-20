@@ -15,19 +15,8 @@ updates:
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 5
-    # Hold back major bumps for tools governed by Nx 22's peer requirements.
-    # Will move together when we run `nx migrate latest` against Nx 23 stable.
-    # @types/node stays pinned to ^24 to keep alignment with Node 24 LTS
-    # (Node 25 is "Current", not LTS).
-    #
-    # webpack-cli used to be in this list — removed after PR #5 merged it
-    # successfully on Nx 22 (Nx Cloud self-healing patched the renamed
-    # --node-env flag). Future webpack-cli major bumps can flow normally.
     ignore:
-      - dependency-name: 'eslint'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'typescript'
-        update-types: ['version-update:semver-major']
+      # Stay on Node 24 LTS — don't auto-bump @types/node to 25+ (Current line).
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
     groups:
