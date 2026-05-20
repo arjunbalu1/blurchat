@@ -36,6 +36,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
+          build-mode: none    # explicit; JS/TS doesn't need a build to analyze
           # `security-extended` adds more rules at the cost of more time/noise.
           # Start with the default set; opt in later if findings stay clean.
           # queries: security-extended
