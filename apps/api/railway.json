@@ -1,6 +1,6 @@
 {
   "build": {
-    "builder": "NIXPACKS",
+    "builder": "RAILPACK",
     "buildCommand": "pnpm nx build api"
   },
   "deploy": {

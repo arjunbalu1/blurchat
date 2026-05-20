@@ -7,6 +7,8 @@
   "devDependencies": {
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
+    "@nx/eslint": "22.7.2",
+    "@nx/eslint-plugin": "22.7.2",
     "@nx/js": "22.7.2",
     "@nx/nest": "22.7.2",
     "@nx/node": "22.7.2",
@@ -16,10 +18,12 @@
     "@swc/core": "1.15.8",
     "@swc/helpers": "0.5.18",
     "@types/node": "20.19.9",
+    "eslint": "~8.57.0",
     "nx": "22.7.2",
     "prettier": "^3.8.1",
     "tslib": "^2.3.0",
     "typescript": "~5.9.2",
+    "typescript-eslint": "^8.59.4",
     "webpack-cli": "^5.1.4"
   },
   "packageManager": "pnpm@11.1.3",
