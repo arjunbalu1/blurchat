@@ -19,12 +19,14 @@ updates:
     # Will move together when we run `nx migrate latest` against Nx 23 stable.
     # @types/node stays pinned to ^24 to keep alignment with Node 24 LTS
     # (Node 25 is "Current", not LTS).
+    #
+    # webpack-cli used to be in this list — removed after PR #5 merged it
+    # successfully on Nx 22 (Nx Cloud self-healing patched the renamed
+    # --node-env flag). Future webpack-cli major bumps can flow normally.
     ignore:
       - dependency-name: 'eslint'
         update-types: ['version-update:semver-major']
       - dependency-name: 'typescript'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'webpack-cli'
         update-types: ['version-update:semver-major']
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
