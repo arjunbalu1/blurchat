@@ -19,6 +19,8 @@ updates:
       # Stay on Node 24 LTS — don't auto-bump @types/node to 25+ (Current line).
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # Transitive via webpack-dev-server (dev-only); can't reach the non-vulnerable 14.x.
+      - dependency-name: 'uuid'
     groups:
       nx:
         patterns:
