@@ -58,9 +58,7 @@ export const pinoHttpOptions: PinoHttpOptions = {
   // On Railway, req.id matches the edge log id; trace_id stays separate via mixin.
   genReqId(req: IncomingMessage) {
     const upstream = req.headers['x-railway-request-id'];
-    if (typeof upstream === 'string' && /^[\w-]{8,128}$/.test(upstream)) {
-      return upstream;
-    }
+    if (typeof upstream === 'string') return upstream;
     const span = trace.getSpan(context.active());
     if (span) {
       const ctx = span.spanContext();
