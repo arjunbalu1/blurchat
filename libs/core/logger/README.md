@@ -69,14 +69,13 @@ Header redaction is commented out in `pino.config.ts` — incoming headers (incl
 
 | var | default |
 |---|---|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset → SDK doesn't start |
-| `OTEL_SERVICE_NAME` | `blurchat-api` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset → SDK doesn't start. Set the **base** endpoint (e.g. Grafana's `…/otlp`); the SDK appends `/v1/traces` |
+| `OTEL_EXPORTER_OTLP_HEADERS` | unset; set `Authorization=Basic …` for authed backends (Grafana Cloud, Honeycomb) |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` (this lib uses the HTTP exporter) |
+| `OTEL_SERVICE_NAME` | unset → `unknown_service:node`; **set per service** (e.g. `blurchat-api`) |
 | `OTEL_SERVICE_VERSION` | `RAILWAY_GIT_COMMIT_SHA[:7]` if set, else absent |
 | `NODE_ENV` | `development` (used as `deployment.environment.name`) |
-| `OTEL_RESOURCE_ATTRIBUTES` | unset (read by SDK natively) |
 | `OTEL_TRACES_SAMPLER` | `AlwaysOn` (set to e.g. `traceidratio` for sampling) |
-
-Endpoint is normalized — trailing slashes and a literal `/v1/traces` suffix are stripped before the SDK rebuilds the URL.
 
 `@opentelemetry/auto-instrumentations-node` patches Node's `http`/`https`, so outgoing axios/fetch/got calls get a child span + `traceparent` header automatically.
 

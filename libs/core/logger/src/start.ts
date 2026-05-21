@@ -7,24 +7,19 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 
-const raw = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
-const endpoint = raw
-  ?.replace(/\/+$/, '')
-  .replace(/\/v1\/traces$/, '');
-
-if (endpoint) {
+if (process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
   const version =
     process.env.OTEL_SERVICE_VERSION ??
     process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7);
 
   const sdk = new NodeSDK({
+    // service.name comes from OTEL_SERVICE_NAME (per service); unset → unknown_service
     resource: resourceFromAttributes({
-      'service.name': process.env.OTEL_SERVICE_NAME ?? 'blurchat-api',
       'deployment.environment.name': process.env.NODE_ENV ?? 'development',
       'cloud.provider': 'railway',
       ...(version ? { 'service.version': version } : {}),
     }),
-    traceExporter: new OTLPTraceExporter({ url: `${endpoint}/v1/traces` }),
+    traceExporter: new OTLPTraceExporter(),
     instrumentations: [
       getNodeAutoInstrumentations({
         '@opentelemetry/instrumentation-fs': { enabled: false },
