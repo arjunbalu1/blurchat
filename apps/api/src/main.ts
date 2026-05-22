@@ -16,6 +16,17 @@ async function bootstrap() {
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
 
+  app.enableCors({
+    origin: [
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
+      ...(process.env.CORS_ORIGINS ?? '')
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean),
+    ],
+    credentials: true,
+  });
+
   setupSwagger(app, { title: 'blurchat-api' });
 
   const port = process.env.PORT || 3000;
