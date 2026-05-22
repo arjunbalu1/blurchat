@@ -13,7 +13,8 @@
     "target": "es2022",
     "paths": {
       "@blurchat/logger": ["./libs/core/logger/src/index.ts"],
-      "@blurchat/logger/instrumentation": ["./libs/core/logger/src/instrumentation.ts"]
+      "@blurchat/logger/instrumentation": ["./libs/core/logger/src/instrumentation.ts"],
+      "@blurchat/swagger": ["./libs/core/swagger/src/index.ts"]
     }
   }
 }

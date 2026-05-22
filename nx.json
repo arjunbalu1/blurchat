@@ -29,5 +29,6 @@
     }
   ],
   "analytics": false,
+  "tui": { "enabled": false },
   "nxCloudId": "6a0d4edceaa36e4dc88b73c5"
 }

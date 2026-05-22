@@ -2,6 +2,7 @@ import '@blurchat/logger/instrumentation';
 
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@blurchat/logger';
+import { setupSwagger } from '@blurchat/swagger';
 
 import { AppModule } from './app/app.module';
 
@@ -14,6 +15,8 @@ async function bootstrap() {
 
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
+
+  setupSwagger(app, { title: 'blurchat-api' });
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
