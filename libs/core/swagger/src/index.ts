@@ -11,7 +11,8 @@ export interface SwaggerOptions {
   description?: string;
   version?: string;
   path?: string;
-  servers?: SwaggerServer[]; // overrides the defaults below
+  prodUrl?: string; // production server for the dropdown; localhost is always added
+  servers?: SwaggerServer[]; // full override of the server list
 }
 
 // dev-only OpenAPI/Swagger UI for a Nest app's controllers
@@ -33,7 +34,9 @@ export function setupSwagger(
       url: `http://localhost:${process.env.PORT ?? '3000'}`,
       description: 'Local',
     },
-    { url: 'https://blurchat.up.railway.app', description: 'Production' },
+    ...(options.prodUrl
+      ? [{ url: options.prodUrl, description: 'Production' }]
+      : []),
   ];
   for (const server of servers) {
     builder.addServer(server.url, server.description);

@@ -27,7 +27,10 @@ async function bootstrap() {
     credentials: true,
   });
 
-  setupSwagger(app, { title: 'blurchat-api' });
+  setupSwagger(app, {
+    title: 'blurchat-api',
+    prodUrl: 'https://blurchat-api.up.railway.app',
+  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
