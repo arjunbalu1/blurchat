@@ -20,18 +20,16 @@ const SENSITIVE_QUERY = new Set([
   'jwt',
 ]);
 
-// mask sensitive query params; pino redact can't reach inside a URL string
+// mask sensitive query-param values in place; pino redact can't reach inside a URL
 function sanitizeUrl(url?: string): string | undefined {
-  if (!url || !url.includes('?')) return url;
-  const [path, query] = url.split('?');
-  const params = new URLSearchParams(query);
-  for (const key of [...params.keys()]) {
-    if (SENSITIVE_QUERY.has(key.toLowerCase())) params.set(key, '[REDACTED]');
-  }
-  return `${path}?${params.toString()}`;
+  if (!url) return url;
+  return url.replace(/([?&])([^&=]+)=([^&]*)/g, (match, sep, key) =>
+    SENSITIVE_QUERY.has(key.toLowerCase()) ? `${sep}${key}=[REDACTED]` : match,
+  );
 }
 
 const pinoHttpOptions: PinoHttpOptions = {
+  name: process.env.OTEL_SERVICE_NAME,
   level: process.env.LOG_LEVEL ?? (isProd ? 'info' : 'debug'),
 
   // app lines carry only reqId; full req/res lands once on the completion line
