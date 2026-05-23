@@ -7,6 +7,30 @@ import type { Options as PinoHttpOptions } from 'pino-http';
 
 const isProd = process.env.NODE_ENV === 'production';
 
+// query-string keys that may carry secrets (OAuth code, verification tokens, …)
+const SENSITIVE_QUERY = new Set([
+  'token',
+  'code',
+  'access_token',
+  'refresh_token',
+  'id_token',
+  'secret',
+  'password',
+  'otp',
+  'jwt',
+]);
+
+// mask sensitive query params; pino redact can't reach inside a URL string
+function sanitizeUrl(url?: string): string | undefined {
+  if (!url || !url.includes('?')) return url;
+  const [path, query] = url.split('?');
+  const params = new URLSearchParams(query);
+  for (const key of [...params.keys()]) {
+    if (SENSITIVE_QUERY.has(key.toLowerCase())) params.set(key, '[REDACTED]');
+  }
+  return `${path}?${params.toString()}`;
+}
+
 const pinoHttpOptions: PinoHttpOptions = {
   level: process.env.LOG_LEVEL ?? (isProd ? 'info' : 'debug'),
 
@@ -24,20 +48,28 @@ const pinoHttpOptions: PinoHttpOptions = {
         },
       },
 
-  // redact: {
-  //   paths: [
-  //     'req.headers.authorization',
-  //     'req.headers.cookie',
-  //     'req.headers["set-cookie"]',
-  //   ],
-  //   censor: '[REDACTED]',
-  // },
+  redact: {
+    paths: [
+      'req.headers.authorization',
+      'req.headers["proxy-authorization"]',
+      'req.headers["x-api-key"]',
+      'req.headers.cookie',
+      'req.headers["set-cookie"]',
+    ],
+    censor: '[REDACTED]',
+  },
+
+  // surface the authenticated user (set by JwtAuthGuard) as a searchable field
+  customProps(req: IncomingMessage) {
+    const sub = (req as IncomingMessage & { user?: { sub?: string } }).user?.sub;
+    return sub ? { userId: sub } : {};
+  },
 
   serializers: {
     req(req: IncomingMessage) {
       return {
         method: req.method,
-        url: req.url,
+        url: sanitizeUrl(req.url),
         headers: req.headers,
       };
     },
