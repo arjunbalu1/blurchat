@@ -15,6 +15,9 @@ const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? 'http://localhost:5173')
 const googleId = process.env.GOOGLE_CLIENT_ID;
 const googleSecret = process.env.GOOGLE_CLIENT_SECRET;
 
+// prod: parent domain to share the session cookie across subdomains (auth ↔ app)
+const cookieDomain = process.env.COOKIE_DOMAIN;
+
 const isProd = process.env.NODE_ENV === 'production';
 
 // Better Auth runs outside Nest DI and is loaded by the migrate CLI (which
@@ -90,6 +93,10 @@ export const auth = betterAuth({
 
   advanced: {
     database: { generateId: 'uuid' }, // record ids as UUIDs (not the default base62)
+    // share the session cookie across subdomains (auth ↔ app); also avoids Safari ITP
+    ...(cookieDomain
+      ? { crossSubDomainCookies: { enabled: true, domain: cookieDomain } }
+      : {}),
   },
 
   plugins: [
