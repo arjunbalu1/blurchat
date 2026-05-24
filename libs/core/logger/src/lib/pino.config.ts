@@ -94,18 +94,6 @@ const pinoHttpOptions: PinoHttpOptions = {
     }
     return randomUUID();
   },
-
-  mixin() {
-    const span = trace.getSpan(context.active());
-    if (!span) return {};
-    const ctx = span.spanContext();
-    if (!isSpanContextValid(ctx)) return {};
-    return {
-      trace_id: ctx.traceId,
-      span_id: ctx.spanId,
-      trace_flags: ctx.traceFlags,
-    };
-  },
 };
 
 // '/' prefix-matches every route under the global prefix; '*' is invalid in Express 5

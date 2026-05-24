@@ -1,4 +1,3 @@
-import { context, isSpanContextValid, trace } from '@opentelemetry/api';
 import { betterAuth } from 'better-auth';
 import { openAPI } from 'better-auth/plugins';
 import { admin } from 'better-auth/plugins/admin';
@@ -22,7 +21,8 @@ const isProd = process.env.NODE_ENV === 'production';
 
 // Better Auth runs outside Nest DI and is loaded by the migrate CLI (which
 // can't resolve the @chatarooni/logger path alias), so it gets its own inline
-// pino instance — mirrors @chatarooni/logger's config (level / transport / trace).
+// pino instance — mirrors @chatarooni/logger's config (level / transport).
+// trace_id/span_id are injected by @opentelemetry/instrumentation-pino, not here.
 const baLogger = pino({
   name: process.env.OTEL_SERVICE_NAME,
   level: process.env.LOG_LEVEL ?? (isProd ? 'info' : 'debug'),
@@ -36,13 +36,6 @@ const baLogger = pino({
           translateTime: 'SYS:HH:MM:ss.l',
         },
       },
-  mixin() {
-    const span = trace.getSpan(context.active());
-    const ctx = span?.spanContext();
-    return ctx && isSpanContextValid(ctx)
-      ? { trace_id: ctx.traceId, span_id: ctx.spanId }
-      : {};
-  },
 }).child({ context: 'better-auth' });
 
 export const auth = betterAuth({
