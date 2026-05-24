@@ -68,7 +68,13 @@ export const auth = betterAuth({
   // Google activates only once its credentials are set in env
   socialProviders: {
     ...(googleId && googleSecret
-      ? { google: { clientId: googleId, clientSecret: googleSecret } }
+      ? {
+          google: {
+            clientId: googleId,
+            clientSecret: googleSecret,
+            prompt: 'select_account', // always show the account picker
+          },
+        }
       : {}),
   },
 
