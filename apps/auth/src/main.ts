@@ -16,7 +16,8 @@ async function bootstrap() {
   app.flushLogs();
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
+  // bind '::' so Railway private networking (IPv6) can reach it; dual-stack also serves IPv4
+  await app.listen(port, '::');
 
   logger.log(`🚀 Auth service running on: http://localhost:${port}`, 'Bootstrap');
 }
