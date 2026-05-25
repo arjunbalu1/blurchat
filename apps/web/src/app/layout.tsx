@@ -3,7 +3,7 @@ import './global.css';
 
 export const metadata: Metadata = {
   title: 'chatarooni',
-  description: 'chat and video chat',
+  description: 'talk2strangers',
 };
 
 export default function RootLayout({
