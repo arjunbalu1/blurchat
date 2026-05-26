@@ -9,14 +9,14 @@ export function SiteHeader() {
       <div className="mx-auto flex h-(--header-h) max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
-          className="flex items-center gap-2 text-3xl font-bold tracking-tight"
+          className="flex items-center gap-2 text-xl font-bold tracking-tight sm:text-2xl md:text-3xl"
         >
           <Image
             src="/logo.png"
             alt=""
             width={64}
             height={64}
-            className="size-16"
+            className="size-10 sm:size-12 md:size-16"
             priority
           />
           <span>

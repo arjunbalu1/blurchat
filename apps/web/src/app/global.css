@@ -3,9 +3,10 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Layout — referenced by the header (h-[var(--header-h)]) and by page
-     containers that fill the viewport below it (calc(100svh - var(--header-h))). */
-  --header-h: 5rem;
+  /* Layout — referenced by the header (h-(--header-h)) and by page
+     containers that fill the viewport below it (calc(100svh - var(--header-h))).
+     Smaller on mobile (see media query below) to save vertical real-estate. */
+  --header-h: 4rem;
   --radius: 0.625rem;
   --background: oklch(0.86 0.034 72);
   --foreground: oklch(0.205 0.02 55);
@@ -46,6 +47,13 @@
   --border: oklch(0.97 0.01 70 / 10%);
   --input: oklch(0.97 0.01 70 / 14%);
   --ring: oklch(0.72 0.2 52);
+}
+
+/* Header grows on tablet/desktop where vertical room is plentiful. */
+@media (min-width: 640px) {
+  :root {
+    --header-h: 5rem;
+  }
 }
 
 @theme inline {
