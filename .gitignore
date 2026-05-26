@@ -49,3 +49,6 @@ next-env.d.ts
 
 # typescript
 *.tsbuildinfo
+
+# next-devtools / playwright-mcp screenshots & logs
+.playwright-mcp/
