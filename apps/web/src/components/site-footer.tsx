@@ -14,7 +14,7 @@ export function SiteFooter() {
             alt=""
             width={32}
             height={32}
-            className="size-6"
+            className="size-7"
           />
           <span>
             Chatarooni<span className="font-normal text-primary">.com</span>
