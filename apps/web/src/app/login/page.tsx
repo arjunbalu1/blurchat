@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { LoginForm } from './login-form';
+import { MascotHero } from '@/components/mascot-hero';
 
 export const metadata: Metadata = {
   title: 'Sign in',
@@ -9,8 +10,11 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <main className="mx-auto flex min-h-[calc(100svh-var(--header-h))] max-w-md flex-col items-center justify-center px-4 sm:px-6">
-      <LoginForm />
-    </main>
+    <section className="relative w-full overflow-hidden">
+      <MascotHero />
+      <main className="relative z-10 mx-auto flex min-h-svh max-w-md flex-col items-center justify-center px-4 sm:px-6">
+        <LoginForm />
+      </main>
+    </section>
   );
 }

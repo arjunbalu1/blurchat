@@ -1,25 +1,11 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { BrandMark } from '@/components/brand-mark';
 
 export function SiteFooter() {
   return (
     <footer className="select-none border-t border-border/60">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-8 sm:flex-row sm:justify-between sm:px-6">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-sm font-medium"
-        >
-          <Image
-            src="/logo.png"
-            alt=""
-            width={32}
-            height={32}
-            className="size-7"
-          />
-          <span>
-            Chatarooni<span className="font-normal text-primary">.com</span>
-          </span>
-        </Link>
+        <BrandMark href="/" size="sm" />
         <nav className="flex items-center gap-6 text-sm text-muted-foreground">
           <Link
             href="/privacy"
