@@ -17,7 +17,7 @@ const STORAGE_KEY = 'mascots-seen';
 // Shared image styling used by every mascot on the page (size + dimming).
 // Tuning these values affects all mascots consistently.
 const MASCOT_IMAGE_CLASSES =
-  'size-[clamp(140px,35vw,480px)] opacity-30 blur-[2px]';
+  'size-[clamp(140px,35vw,480px)] opacity-30 blur-[2px] xl:opacity-60 xl:blur-[1px] 2xl:opacity-100 2xl:blur-none';
 
 const REST = { x: '0%', y: '0%', rotate: 0, opacity: 1 };
 
