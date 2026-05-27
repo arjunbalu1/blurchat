@@ -4,8 +4,12 @@ packages:
 # Patch CVE-2026-41305 (postcss XSS) — force all transitive postcss to the
 # fixed line. Next pins an older one internally; this floor accommodates
 # Next's future bumps automatically (^8.5.10 covers 8.5.x and 8.6+).
+# Patch CVE-2026-44705 (tmp path traversal) — Nx 22.7.2 resolves tmp@0.2.4;
+# fix is in 0.2.6. Dev-only transitive, but force-upgrade closes the alert
+# and stops Dependabot's retry loop.
 overrides:
   postcss: '^8.5.10'
+  tmp: '^0.2.6'
 # supply-chain: refuse registry packages published < 24h ago (mirrors Railway)
 minimumReleaseAge: 1440
 allowBuilds:
