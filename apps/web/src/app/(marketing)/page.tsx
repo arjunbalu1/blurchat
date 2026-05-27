@@ -13,17 +13,25 @@ export default function Home() {
       <section className="relative w-full overflow-hidden">
         <MascotCluster />
         <main className="relative z-10 mx-auto flex min-h-[calc(100svh-var(--header-h))] max-w-6xl flex-col items-center justify-center px-4 text-center sm:px-6">
-          <h1 className="text-balance text-5xl font-bold tracking-tight sm:text-7xl [text-shadow:0_0_12px_var(--background),0_0_24px_var(--background),0_0_48px_var(--background)]">
+          <h1 className="text-balance text-5xl font-bold tracking-tight sm:text-7xl">
             Talk to <span className="text-primary">strangers</span>
           </h1>
-          <p className="mt-6 max-w-md text-balance text-lg text-foreground/80 [text-shadow:0_0_8px_var(--background),0_0_20px_var(--background),0_0_40px_var(--background)]">
+          <p className="mt-6 max-w-md text-balance text-lg text-foreground/80">
             Free random text chat. Meet new people from around the world — no sign-up
             required.
           </p>
           <Button asChild size="xl" className="mt-10 font-semibold">
-            <Link href="/chat">Start chatting</Link>
+            <Link href="/chat">
+              <span className="relative flex size-2.5" aria-hidden="true">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-foreground opacity-75" />
+                <span className="relative inline-flex size-2.5 items-center justify-center rounded-full bg-primary-foreground">
+                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                </span>
+              </span>
+              Start chatting
+            </Link>
           </Button>
-          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground [text-shadow:0_0_6px_var(--background),0_0_16px_var(--background)]">
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
             <span className="size-1.5 rounded-full bg-primary/70" aria-hidden="true" />
             Video chat — coming soon
           </div>
