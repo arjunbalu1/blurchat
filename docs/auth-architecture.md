@@ -1,26 +1,3 @@
-# talk 2 strangers kek
-
-## TODO
-
-### Frontend
-
-- **Login form: remove sign-up toggle** — `disableSignUp: true` is live in apps/auth, but the form still has a Sign-up mode that returns `signup_disabled` on submit. Drop the mode toggle and the Name field; keep only "Sign in" + "Continue with Google".
-- **Login form: "Forgot password?" link** — add to the form, points to a `/forgot-password` page that calls `requestPasswordReset`. Blocked on backend email service (Resend) being wired.
-- **Home page: real body sections** — replace TEMP lorem placeholder in `app/page.tsx` with how-it-works → safety → footer-CTA sections. Needed for soft launch.
-- **`/chat` route + route-group restructure** — build the actual product. As the first commit, restructure: move existing pages into `app/(marketing)/*` (keeps header + footer), put chat under `app/(app)/chat/*` (own layout, no marketing chrome). Strip `SiteHeader`/`SiteFooter` from root layout.
-- **Anon flow on frontend** — call `signIn.anonymous()` lazily on first chat engagement (not on page load); `AccountMenu` adapts for anon users (show displayName + "Save your account" CTA instead of just Sign out); show "Chatting as BraveOwl42 [sign up to save]" affordance in chat. Blocked on backend Phase 1 (anon plugin + publicId + displayName additionalFields).
-- **Rename UI in chat** — `/chat` settings should let users change displayName via `authClient.updateUser({ displayName })`. Blocked on `/chat` existing.
-- **PWA support** — add `viewport-fit=cover` + `safe-area-inset` padding so Add-to-Home-Screen looks clean on iPhone (Dynamic Island / home indicator).
-- **Auth: errorCallbackURL** — add to Google sign-in so OAuth errors route to the frontend instead of an auth 404.
-- **Cloudflare: cache static frontend** — Cache Rule on apex; defer until frontend stable (cached HTML goes stale during dev).
-
-### Backend
-
-- **Email service (Resend)** — wire `sendResetPassword` in `apps/auth/src/auth.ts`; without it, `requestPasswordReset` silently no-ops and users can't recover passwords. Blocks the forgot-password UX from working.
-- **OAuth: Apple Sign-In** — needs Apple Developer Account ($99/yr); pre-generate the `clientSecret` JWT (ES256 signed with `.p8` key, rotate every 6 months); add `https://appleid.apple.com` to `trustedOrigins` when enabled; HTTPS-only (no localhost dev). Required if/when iOS app ships.
-- **OAuth: Facebook** — Facebook Developer App + `FACEBOOK_CLIENT_ID`/`FACEBOOK_CLIENT_SECRET` env vars; add `mapProfileToUser` fallback for the case where Facebook omits `email` (phone-only accounts, revoked consent).
-- **Cloudflare: CSAM scanning** — enable + NCMEC reporting once image uploads exist.
-
 # Auth & User Identity Architecture
 
 Plan for Better Auth + anonymous users + cross-service identity in the chatarooni monorepo (apps/auth, apps/api, apps/web).

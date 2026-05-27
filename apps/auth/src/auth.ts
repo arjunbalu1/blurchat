@@ -57,8 +57,9 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
+    disableSignUp: true, // OAuth-only signup; password is set later via reset flow
     minPasswordLength: 8,
-    requireEmailVerification: false, // no email service wired yet
+    // TODO: wire sendResetPassword once an email provider (Resend/Postmark/SES) is set up
   },
 
   // Google activates only once its credentials are set in env
@@ -72,6 +73,14 @@ export const auth = betterAuth({
           },
         }
       : {}),
+  },
+
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ['google'],
+      updateUserInfoOnLink: true,
+    },
   },
 
   session: {
