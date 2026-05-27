@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   motion,
   useAnimate,
@@ -115,13 +115,27 @@ export function Mascot({
     return { x, y, rotate, opacity: 0 };
   }, [enterFrom]);
 
-  useEffect(() => {
+  // Capture sessionStorage state at mount (during render, before any useEffect
+  // writes to it). When MascotCluster mounts 5 mascots simultaneously, all
+  // their useState initializers run synchronously during the same render
+  // burst — they all observe the same "seen" state. If we instead read
+  // sessionStorage inside useEffect, the first-fired effect would set the
+  // flag and subsequent mascots' effects would see it as "already seen" and
+  // wrongly skip their entrance animation.
+  const [initialSeen] = useState(() =>
+    typeof window !== 'undefined' && sessionStorage.getItem(STORAGE_KEY) !== null
+  );
+  const [isReload] = useState(() => {
+    if (typeof window === 'undefined') return false;
     const navEntry = performance.getEntriesByType(
       'navigation'
     )[0] as PerformanceNavigationTiming | undefined;
-    const isReload = navEntry?.type === 'reload';
-    const seen = sessionStorage.getItem(STORAGE_KEY) !== null;
-    const shouldSkipEntrance = Boolean(reducedMotion) || (seen && !isReload);
+    return navEntry?.type === 'reload';
+  });
+
+  useEffect(() => {
+    const shouldSkipEntrance =
+      Boolean(reducedMotion) || (initialSeen && !isReload);
 
     if (shouldSkipEntrance) {
       animate(scope.current, REST, { duration: 0 });
@@ -147,7 +161,7 @@ export function Mascot({
     };
     window.addEventListener('pageshow', onPageShow);
     return () => window.removeEventListener('pageshow', onPageShow);
-  }, [animate, scope, reducedMotion, enterFrom]);
+  }, [animate, scope, reducedMotion, enterFrom, initialSeen, isReload]);
 
   return (
     <motion.div
