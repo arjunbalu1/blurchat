@@ -353,7 +353,7 @@ WHERE "isAnonymous" = true
 ### Phase 2 — apps/api chat domain
 
 14. Tables: chat_session, friends, blocks, reports — all keyed by publicId.
-15. Auth middleware reads `publicId`, `isAnonymous`, `displayName` from JWT.
+15. ~~Auth middleware reads `publicId`, `isAnonymous`, `displayName` from JWT.~~ ✅ done ahead of Phase 2 — `libs/core/auth`'s `JwtAuthGuard` verifies via JWKS and attaches `req.user` with these claims; `RolesGuard` handles `role`. Just needs chat endpoints to consume it.
 16. Endpoint authorization branches on `isAnonymous`.
 17. WebSocket text chat (server-relayed for moderation).
 18. WebRTC signaling (for future video).
@@ -406,6 +406,7 @@ WHERE "isAnonymous" = true
 
 ## Related docs
 
-- `README.md` — TODOs reference this plan
+- The **TODO** section at the top of this README tracks the actionable slice of this plan.
 - Better Auth anonymous plugin: <https://better-auth.com/docs/plugins/anonymous>
 - Better Auth additional fields: <https://better-auth.com/docs/concepts/database#extending-core-schema>
+- Better Auth JWT plugin (`definePayload`, `getSubject`, `audience`): <https://better-auth.com/docs/plugins/jwt>
