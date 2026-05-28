@@ -56,13 +56,13 @@ When an anon user (signed in via `signIn.anonymous()`) initiates `signUp.email`,
 ### Path A — Anon signs up with brand-new credentials
 
 ```
-Anon (id=A, publicId=P1, displayName="BraveOwl42")
+Anon (id=A, publicId=P1, displayName=P1)
     ↓ signUp via OAuth (Google, brand-new email)
     ↓ Better Auth creates newUser (id=B, publicId=P2-auto-generated)
     ↓ onLinkAccount fires
-    ↓ Detection: newUser.createdAt within last 60s → fresh signup
-    ↓ updateUser: copy publicId (P1) and displayName from anon to newUser
-    ↓ newUser becomes (id=B, publicId=P1, displayName="BraveOwl42")
+    ↓ Detection: newUser.createdAt ≈ its session.createdAt (<1s) → fresh signup
+    ↓ two-step swap: free anon's P1 (placeholder), then set newUser.publicId/displayName = P1
+    ↓ newUser becomes (id=B, publicId=P1, displayName=P1)
     ↓ Better Auth deletes anon (id=A)
 Result: apps/api data keyed by P1 is intact. User keeps their chats, friends, etc.
 ```
@@ -181,7 +181,7 @@ apps/api reads `publicId` from claims and uses it as the user identifier in all 
 - **`publicId`** — apps/api's identity key. Required.
 - **`isAnonymous`** — kept SEPARATE from `role`. They're orthogonal: `role` = "what permissions does this user have?" (`user`/`admin`/future `moderator`/`banned`); `isAnonymous` = "what kind of account is this?" (anon session vs real account). These vary independently — an anon user can be banned (role=banned, isAnonymous=true); a real user can be a moderator (role=moderator, isAnonymous=false). Collapsing them into one field forces a Cartesian product of values. Also, Better Auth's admin plugin sets `role='user'` by default on every user create (anon included), so encoding "anon" as `role=null` would mean fighting the plugin with custom hooks. Boolean stays explicit and self-documenting.
 - **`displayName`** — included for performance: every chat message Alice sends to Bob needs Alice's displayName in the payload. Looking it up per-request would mean either a DB hit per message (hot path) or a custom connection-time handshake (more protocol). JWT claim is the cleanest pattern. **Caveat**: displayName in JWT is slightly stale on rename — Alice's active JWT carries the old name until refresh. Acceptable for chat (eventual consistency, small UX lag). Force JWT refresh on rename if instant propagation is ever required.
-- **`image`** — **custom random avatar URL** (NOT Google's profile picture). Generated server-side at user creation, seeded by publicId for stability across devices. Same reasoning as displayName: included in JWT to avoid a per-request lookup when rendering avatars in chat / friend lists / message bubbles. Same staleness caveat applies — JWT carries the URL at time of issue; if the user re-rolls or uploads a custom avatar, the new URL propagates on next JWT refresh.
+- **`image`** — **(DEFERRED — not in the JWT yet, avatars not built.)** Planned: a custom random avatar URL (NOT Google's profile picture), generated server-side at user creation, seeded by publicId for stability across devices. Same reasoning as displayName — include it in the JWT to avoid a per-request lookup when rendering avatars in chat / friend lists / message bubbles. Same staleness caveat will apply on re-roll.
 - **`role`** — existing in current config (set by admin plugin). Used for permission checks.
 
 ### Claims and the JWT
@@ -274,11 +274,11 @@ After Path B (or after anon idle-cleanup cron deletes a stale anon user), apps/a
 - Lazy: only call `signIn.anonymous()` when user attempts to chat (not on home page load). Marketing visitors don't get DB rows.
 - Auto: when triggered, no confirmation modal. UI says "Starting your chat..." not "Creating an account...".
 
-### Login form
+### Login form (shipped)
 
-- Drop sign-up mode toggle (signup is OAuth-only via `disableSignUp: true`).
-- Keep "Sign in" + "Continue with Google".
-- Add "Forgot password?" link → `/forgot-password` page that calls `requestPasswordReset`. Blocked until backend Resend wired.
+- Sign-in only (no sign-up mode) — Google, email (existing users only), and anonymous.
+- Forgot/reset password is an **in-place** flow within the form (not a separate `/forgot-password` page); calls `requestPasswordReset` with `redirectTo: …/reset-password`. The `/reset-password` landing page + actual email send are still blocked on Resend.
+- `errorCallbackURL` set on social sign-in; the form reads `?error=` and shows a message (e.g. `account_already_exists` from the claim flow).
 
 ### AccountMenu adapts to user type
 
