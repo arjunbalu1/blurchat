@@ -1,5 +1,7 @@
 import 'server-only';
 import { createAuthClient } from 'better-auth/client';
+import { inferAdditionalFields } from 'better-auth/client/plugins';
+import { userAdditionalFields } from '@chatarooni/auth/fields';
 
 // Server-only auth client — uses better-auth/client (no React/nano-stores)
 // since this never runs in the browser. The /react export is reserved for
@@ -11,4 +13,7 @@ import { createAuthClient } from 'better-auth/client';
 const baseURL =
   process.env.AUTH_INTERNAL_URL ?? process.env.NEXT_PUBLIC_AUTH_URL;
 
-export const authServerClient = createAuthClient({ baseURL });
+export const authServerClient = createAuthClient({
+  baseURL,
+  plugins: [inferAdditionalFields({ user: userAdditionalFields })],
+});

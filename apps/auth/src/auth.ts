@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { getOAuthState } from 'better-auth/api';
 import { openAPI } from 'better-auth/plugins';
 import { admin } from 'better-auth/plugins/admin';
 import { anonymous } from 'better-auth/plugins/anonymous';
@@ -7,6 +8,10 @@ import { jwt } from 'better-auth/plugins/jwt';
 import { Pool } from 'pg';
 import pino from 'pino';
 import { v7 as uuidv7 } from 'uuid';
+// Relative path (not @chatarooni/auth/fields) because Better Auth's migrate
+// CLI uses jiti, which doesn't honor workspace path aliases.
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { userAdditionalFields } from '../../../libs/core/auth/src/fields';
 
 const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? 'http://localhost:5173')
   .split(',')
@@ -68,21 +73,8 @@ export const auth = betterAuth({
   // publicId = stable cross-service identity (apps/api uses this, never the
   // internal id). displayName starts as a copy of publicId; later we'll swap
   // the initialization for a random-name generator without changing consumers.
-  user: {
-    additionalFields: {
-      publicId: {
-        type: 'string',
-        required: true,
-        unique: true,
-        input: false,
-      },
-      displayName: {
-        type: 'string',
-        required: true,
-        input: false,
-      },
-    },
-  },
+  // Shared with apps/web's auth clients via @chatarooni/auth/fields.
+  user: { additionalFields: userAdditionalFields },
 
   // Generate publicId once at insert time, then mirror to displayName so they
   // share the value. Doing both in one before-hook avoids two independent
@@ -150,13 +142,42 @@ export const auth = betterAuth({
   plugins: [
     admin(),
     anonymous({
-      // When an anon user signs up via OAuth, copy publicId/displayName forward
-      // so any pre-link records (chat messages on apps/api keyed by publicId)
-      // keep pointing at the same identity after the upgrade.
-      // Two-step swap because publicId is UNIQUE: free anon's slot first by
-      // renaming, then claim it on newUser. The anonymous() plugin deletes the
-      // anon row right after this hook returns, so the placeholder is fleeting.
+      // Better Auth fires onLinkAccount whenever an anon user OAuths. Two cases:
+      //   (a) Fresh OAuth account → transfer publicId/displayName forward so
+      //       pre-link records (chat etc. keyed by publicId) keep working.
+      //   (b) Existing OAuth account → behavior depends on user intent, which
+      //       the client signals via additionalData.intent ('claim' | 'signin'):
+      //         - 'claim': user wanted to upgrade anon → real, but the OAuth
+      //                    account is taken. Redirect with an error.
+      //         - 'signin' (or unset): user wanted to switch to their existing
+      //                                 account. Silently let the merge happen
+      //                                 (don't overwrite the existing publicId).
+      //
+      // Detect fresh vs existing by comparing user.createdAt to session.createdAt
+      // — a fresh user is created at (≈) the same instant as its first session.
       onLinkAccount: async ({ anonymousUser, newUser, ctx }) => {
+        const userMs = new Date(newUser.user.createdAt).getTime();
+        const sessionMs = new Date(newUser.session.createdAt).getTime();
+        const isFreshUser = Math.abs(sessionMs - userMs) < 1000;
+
+        if (!isFreshUser) {
+          const state = (await getOAuthState()) as { intent?: string } | null;
+          if (state?.intent === 'claim') {
+            // ctx.redirect (not APIError) is the only way to override Better
+            // Auth's default "silent merge" behavior for OAuth callbacks.
+            throw ctx.redirect(
+              `${trustedOrigins[0]}/login?error=account_already_exists`,
+            );
+          }
+          // signin intent (or unspecified): let Better Auth silently sign the
+          // user into their existing account. Don't touch publicId.
+          return;
+        }
+
+        // Two-step swap because publicId is UNIQUE: free anon's slot first by
+        // renaming, then claim it on newUser. The anonymous() plugin deletes
+        // the anon row right after this hook returns, so the placeholder is
+        // fleeting.
         await ctx.context.internalAdapter.updateUser(anonymousUser.user.id, {
           publicId: `_linked_${anonymousUser.user.id}`,
         });

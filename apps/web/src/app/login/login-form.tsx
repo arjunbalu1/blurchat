@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Ghost, Mail } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { BrandMark } from '@/components/brand-mark';
@@ -84,14 +84,42 @@ function FacebookIcon() {
 //                  Back to sign in
 type EmailMode = 'collapsed' | 'sign-in' | 'forgot' | 'forgot-sent';
 
+// Maps a Better Auth error code (passed via ?error= on the OAuth error redirect)
+// to a user-facing message. Anything unrecognized falls back to a generic line.
+function errorMessageFor(code: string | null): string | null {
+  if (!code) return null;
+  switch (code) {
+    case 'account_already_exists':
+      return 'An account already exists for that provider. Sign out and sign in again to use it.';
+    default:
+      return 'Sign-in failed. Please try again.';
+  }
+}
+
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [emailMode, setEmailMode] = useState<EmailMode>('collapsed');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() =>
+    errorMessageFor(searchParams.get('error')),
+  );
+
+  // If we navigate back to /login with a different error param, surface it.
+  useEffect(() => {
+    const msg = errorMessageFor(searchParams.get('error'));
+    if (msg) setError(msg);
+  }, [searchParams]);
+
+  // /login?intent=claim → arrived via "Save my anon as a real account" CTA.
+  // The backend reads this from OAuth additionalData and errors when the
+  // OAuth identity already has an existing account. Anything else = sign-in
+  // intent (silent merge into existing account if one exists).
+  const isClaimMode = searchParams.get('intent') === 'claim';
+  const intent = isClaimMode ? 'claim' : 'signin';
 
   const onAuthSuccess = () => {
     router.push('/');
@@ -125,6 +153,8 @@ export function LoginForm() {
         {
           provider: 'google',
           callbackURL: `${window.location.origin}/`,
+          errorCallbackURL: `${window.location.origin}/login`,
+          additionalData: { intent },
         },
         {
           onError: (ctx) =>
@@ -145,6 +175,8 @@ export function LoginForm() {
         {
           provider: 'facebook',
           callbackURL: `${window.location.origin}/`,
+          errorCallbackURL: `${window.location.origin}/login`,
+          additionalData: { intent },
         },
         {
           onError: (ctx) =>

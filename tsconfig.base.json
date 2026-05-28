@@ -13,6 +13,7 @@
     "target": "es2022",
     "paths": {
       "@chatarooni/auth": ["./libs/core/auth/src/index.ts"],
+      "@chatarooni/auth/fields": ["./libs/core/auth/src/fields.ts"],
       "@chatarooni/logger": ["./libs/core/logger/src/index.ts"],
       "@chatarooni/logger/instrumentation": ["./libs/core/logger/src/instrumentation.ts"],
       "@chatarooni/swagger": ["./libs/core/swagger/src/index.ts"]

@@ -20,7 +20,8 @@
       "@/*": ["./src/*"],
       "@chatarooni/logger/instrumentation": [
         "../../libs/core/logger/src/instrumentation.ts"
-      ]
+      ],
+      "@chatarooni/auth/fields": ["../../libs/core/auth/src/fields.ts"]
     }
   },
   "include": [

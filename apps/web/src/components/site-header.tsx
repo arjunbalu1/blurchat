@@ -15,7 +15,7 @@ export async function SiteHeader() {
         <div className="flex items-center gap-2">
           <ModeToggle />
           {session?.user ? (
-            <UserMenu user={session.user} />
+            <UserMenu user={{ displayName: session.user.displayName }} />
           ) : (
             <Button asChild variant="outline" size="lg">
               <Link href="/login">Log in</Link>

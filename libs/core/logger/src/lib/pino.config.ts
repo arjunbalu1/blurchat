@@ -30,7 +30,9 @@ function sanitizeUrl(url?: string): string | undefined {
 
 // Base level/transport/name mirror apps/auth/src/auth.ts and
 // apps/web/src/lib/logger.ts — keep them in sync.
-const pinoHttpOptions: PinoHttpOptions = {
+// Exported so apps/auth can reuse the same redaction/sanitization for its
+// Better Auth routes (which bypass nestjs-pino) — see app.module.ts.
+export const pinoHttpOptions: PinoHttpOptions = {
   name: process.env.OTEL_SERVICE_NAME,
   level: process.env.LOG_LEVEL ?? (isProd ? 'info' : 'debug'),
   transport: isProd

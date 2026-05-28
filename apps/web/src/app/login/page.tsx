@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { LoginForm } from './login-form';
 import { MascotCluster } from '@/components/mascot';
@@ -13,7 +14,12 @@ export default function LoginPage() {
     <section className="relative w-full overflow-hidden">
       <MascotCluster />
       <main className="relative z-10 mx-auto flex min-h-svh max-w-md flex-col items-center justify-center px-4 sm:px-6">
-        <LoginForm />
+        {/* Suspense boundary required because LoginForm uses
+            useSearchParams (reads ?error= and ?intent=). Without it, Next.js
+            can't statically prerender the shell — fails the build. */}
+        <Suspense fallback={null}>
+          <LoginForm />
+        </Suspense>
       </main>
     </section>
   );

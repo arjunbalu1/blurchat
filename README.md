@@ -17,6 +17,7 @@
 ### Backend
 
 - **Email service (Resend)** — wire `sendResetPassword` in `apps/auth/src/auth.ts`; without it, `requestPasswordReset` silently no-ops and users can't recover passwords. Blocks the forgot-password UX from working.
+- **Orphan anon user cleanup** — anon rows linger after Path B (silent merge) or claim-error flows because Better Auth's anonymous plugin only deletes the anon on a successful link transfer. Add a periodic job (cron / scheduled Postgres function / Nest schedule) to delete anon users with no active session older than N hours. Once `/chat` exists, also decide what happens to their pre-link records keyed by `publicId` (delete cascade, or preserve as historical).
 - **OAuth: Apple Sign-In** — needs Apple Developer Account ($99/yr); pre-generate the `clientSecret` JWT (ES256 signed with `.p8` key, rotate every 6 months); add `https://appleid.apple.com` to `trustedOrigins` when enabled; HTTPS-only (no localhost dev). Required if/when iOS app ships.
 - **OAuth: Facebook** — Facebook Developer App + `FACEBOOK_CLIENT_ID`/`FACEBOOK_CLIENT_SECRET` env vars; add `mapProfileToUser` fallback for the case where Facebook omits `email` (phone-only accounts, revoked consent).
 - **Cloudflare: CSAM scanning** — enable + NCMEC reporting once image uploads exist.
