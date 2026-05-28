@@ -14,14 +14,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 type User = {
-  name?: string | null;
-  email?: string | null;
+  displayName?: string | null;
 };
 
 export function UserMenu({ user }: { user: User }) {
   const router = useRouter();
 
-  const displayName = firstName(user.name) ?? user.email ?? 'Account';
+  const label = user.displayName ?? 'Account';
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -33,24 +32,21 @@ export function UserMenu({ user }: { user: User }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="lg">
-          <span className="max-w-32 truncate">{displayName}</span>
+          <span className="max-w-32 truncate">{label}</span>
           <ChevronDown className="size-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col gap-0.5">
-            {user.name && (
-              <p className="text-sm font-medium leading-none">{user.name}</p>
-            )}
-            {user.email && (
-              <p className="truncate text-xs text-muted-foreground">
-                {user.email}
+        {user.displayName && (
+          <>
+            <DropdownMenuLabel className="font-normal">
+              <p className="text-sm font-medium leading-none">
+                {user.displayName}
               </p>
-            )}
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="size-4" />
           Sign out
@@ -58,10 +54,4 @@ export function UserMenu({ user }: { user: User }) {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-function firstName(name?: string | null) {
-  if (!name) return null;
-  const first = name.trim().split(/\s+/)[0];
-  return first || null;
 }
