@@ -31,7 +31,11 @@ export const getSession = cache(async () => {
   // Forward ONLY the Cookie header — forwarding everything (Origin, Referer, etc.)
   // trips Better Auth's CSRF check at the auth service.
   const cookie = headerStore.get('cookie') ?? '';
-  if (!cookie) return null;
+  // Skip the network round-trip for logged-out users. The browser routinely
+  // sends unrelated cookies (Next.js HMR, ad/analytics, etc.) so we can't
+  // rely on the cookie header being empty — match the Better Auth session
+  // cookie specifically. Prefix matches both prod (`__Secure-`) and dev.
+  if (!cookie.includes('better-auth.session_token')) return null;
 
   try {
     const { data } = await authServerClient.getSession({

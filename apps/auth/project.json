@@ -27,7 +27,8 @@
       "options": {
         "buildTarget": "auth:build",
         "runBuildTargetDependencies": false,
-        "runtimeArgs": ["--env-file-if-exists=apps/auth/.env"]
+        "runtimeArgs": ["--env-file-if-exists=apps/auth/.env"],
+        "inspect": false
       },
       "configurations": {
         "development": {
