@@ -13,8 +13,8 @@ export interface AuthModuleOptions {
 // JWT claims minted by the auth service: standard set + our payload fields.
 // publicId is the stable cross-service identity (anon→real link preserves it).
 // displayName starts as a copy of publicId; will swap to a name generator later.
+// No email by design — apps/api keys off publicId; keeps PII out of the token.
 export interface AuthJwtPayload extends JWTPayload {
-  email: string;
   role: string;
   publicId: string;
   displayName: string;

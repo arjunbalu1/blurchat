@@ -189,8 +189,14 @@ export const auth = betterAuth({
     }),
     jwt({
       jwt: {
+        // sub = publicId (not the internal user.id, which changes on anon→real
+        // link). Keeps the internal id fully private to apps/auth and makes the
+        // token self-consistent — everything identifying the user is publicId.
+        getSubject: ({ user }) => user.publicId,
+        // No email — apps/api keys everything off publicId. Keeping email out
+        // avoids PII in logs/traces and shrinks the leak blast-radius. If
+        // moderation ever needs it, look it up via getUser(publicId).
         definePayload: ({ user }) => ({
-          email: user.email,
           role: user.role,
           publicId: user.publicId,
           displayName: user.displayName,

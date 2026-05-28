@@ -49,7 +49,6 @@ export class JwtAuthGuard implements CanActivate {
 
     if (
       !payload.sub ||
-      !payload.email ||
       !payload.role ||
       !payload.publicId ||
       !payload.displayName

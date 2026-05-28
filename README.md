@@ -4,14 +4,16 @@
 
 ### Frontend
 
-- **Login form: remove sign-up toggle** — `disableSignUp: true` is live in apps/auth, but the form still has a Sign-up mode that returns `signup_disabled` on submit. Drop the mode toggle and the Name field; keep only "Sign in" + "Continue with Google".
-- **Login form: "Forgot password?" link** — add to the form, points to a `/forgot-password` page that calls `requestPasswordReset`. Blocked on backend email service (Resend) being wired.
+- ~~**Login form: remove sign-up toggle** — `disableSignUp: true` is live in apps/auth, but the form still has a Sign-up mode that returns `signup_disabled` on submit. Drop the mode toggle and the Name field; keep only "Sign in" + "Continue with Google".~~ ✅ done — login form is sign-in only (Google / email / anonymous), no sign-up mode.
+- ~~**Login form: "Forgot password?" link** — add to the form, points to a `/forgot-password` page that calls `requestPasswordReset`.~~ ✅ done — forgot/reset is an in-place flow in the login form (no separate page), calls `requestPasswordReset` with `redirectTo: …/reset-password`. Still blocked on Resend for the email to actually send.
+- **`/reset-password` page** — landing page for the emailed reset link; reads the token and calls `authClient.resetPassword({ newPassword, token })`. Blocked on backend email service (Resend).
 - **Home page: real body sections** — replace TEMP lorem placeholder in `app/page.tsx` with how-it-works → safety → footer-CTA sections. Needed for soft launch.
 - **`/chat` route + route-group restructure** — build the actual product. As the first commit, restructure: move existing pages into `app/(marketing)/*` (keeps header + footer), put chat under `app/(app)/chat/*` (own layout, no marketing chrome). Strip `SiteHeader`/`SiteFooter` from root layout.
-- **Anon flow on frontend** — call `signIn.anonymous()` lazily on first chat engagement (not on page load); `AccountMenu` adapts for anon users (show displayName + "Save your account" CTA instead of just Sign out); show "Chatting as BraveOwl42 [sign up to save]" affordance in chat. Blocked on backend Phase 1 (anon plugin + publicId + displayName additionalFields).
-- **Rename UI in chat** — `/chat` settings should let users change displayName via `authClient.updateUser({ displayName })`. Blocked on `/chat` existing.
+- **Anon flow on frontend** — `signIn.anonymous()` is wired to the login button; still TODO: fire it lazily on first chat engagement (not just from /login); `AccountMenu` adapts for anon users (show "Save your account" CTA → `/login?intent=claim` instead of just Sign out); show "Chatting as … [sign up to save]" affordance in chat. Blocked on `/chat` existing. (The claim-vs-signin intent routing itself is already wired in the form + backend `onLinkAccount`.)
+- **Rename UI in chat** — `/chat` settings should let users change displayName via `authClient.updateUser({ displayName })`. Blocked on `/chat` existing AND on the random-name generator (displayName is currently the raw publicId UUID).
+- **Browser-side JWT for chat** — chat WebSocket auth needs the JWT fetched client-side via `authClient.token()` (or the `set-auth-jwt` header), held in JS memory, refreshed before the 15-min expiry. Blocked on `/chat`.
 - **PWA support** — add `viewport-fit=cover` + `safe-area-inset` padding so Add-to-Home-Screen looks clean on iPhone (Dynamic Island / home indicator).
-- **Auth: errorCallbackURL** — add to Google sign-in so OAuth errors route to the frontend instead of an auth 404.
+- ~~**Auth: errorCallbackURL** — add to Google sign-in so OAuth errors route to the frontend instead of an auth 404.~~ ✅ done — `errorCallbackURL: …/login` on both social sign-ins; the login form reads `?error=` and shows a message.
 - **Cloudflare: cache static frontend** — Cache Rule on apex; defer until frontend stable (cached HTML goes stale during dev).
 
 ### Backend
@@ -48,8 +50,8 @@ Beyond Better Auth defaults:
 
 | Field | Source | Type | Notes |
 |---|---|---|---|
-| `publicId` | `user.additionalFields` | string, unique, defaultValue = `uuidv7()` | Stable handle used by apps/api everywhere. Preserved across Path A upgrade via `onLinkAccount`. v7 for B-tree index performance. |
-| `displayName` | `user.additionalFields` | string | Random "BraveOwl42" name. Generated for every new user via `databaseHooks.user.create.before` (anon AND direct signup). Copied forward in `onLinkAccount` Path A. |
+| `publicId` | `user.additionalFields` (shared via `@chatarooni/auth/fields`) | string, unique, required | Stable handle used by apps/api everywhere. **Generated in `databaseHooks.user.create.before` via `uuidv7()`** (not `defaultValue` — the same hook sets `displayName` to the same value, so both share one UUID). Preserved across Path A upgrade via `onLinkAccount`. v7 for B-tree index performance. |
+| `displayName` | `user.additionalFields` (shared via `@chatarooni/auth/fields`) | string, required | **Currently a copy of `publicId`** (the same UUID). The random-name generator ("BraveOwl42") is DEFERRED — when it lands, only the `databaseHooks.before` initialization changes; consumers (JWT claim, AccountMenu) stay the same. Copied forward in `onLinkAccount` Path A. |
 | `isAnonymous` | added by `anonymous()` plugin | boolean | Distinguishes guest sessions from real accounts. Travels as JWT claim. |
 
 Defaults Better Auth provides that we keep using:
@@ -58,11 +60,11 @@ Defaults Better Auth provides that we keep using:
 |---|---|
 | `id` | Better Auth internal. **Changes** on anon → real link. apps/api never sees this. |
 | `name` | Real name from Google OAuth (since `profile` scope kept). **Stored, never displayed.** Used only for audit / abuse evidence. |
-| `image` | **Overridden** — populated by us with a custom random avatar URL (e.g., Dicebear seeded by `publicId`), NOT Google's `picture` URL. Set via the same `databaseHooks.user.create.before` that fills `displayName`. Stable across devices because the seed is the publicId. |
+| `image` | **DEFERRED** — plan is to override with a custom random avatar URL (e.g., Dicebear seeded by `publicId`), NOT Google's `picture`. **Not yet implemented** — currently whatever Better Auth/Google sets. When built, populate it in the same `databaseHooks.user.create.before` that fills `displayName`. Not in the JWT yet either (see JWT claims). |
 | `email` | Nullable (anon plugin allows). Populated on signup/OAuth. |
 | `emailVerified`, `createdAt`, `updatedAt` | Standard. |
 
-### Avatar generation pattern
+### Avatar generation pattern (DEFERRED — not yet built)
 
 Custom random avatars instead of OAuth profile pictures, for the same anonymity-by-default reason `displayName` overrides the real name. Two viable approaches:
 
@@ -91,152 +93,110 @@ Result: apps/api data keyed by P1 is intact. User keeps their chats, friends, et
 
 ### Path B — Anon signs in to existing account (different device, returning user)
 
+Path B further splits by **user intent**, signalled from the client via `additionalData.intent` on the `signIn.social` call (read server-side via `getOAuthState()`):
+
 ```
-Anon (id=C, publicId=P3, displayName="QuietRiver89") on new device
-    ↓ signIn via Google (already-existing account)
-    ↓ newUser = the EXISTING user U1 (id=D, publicId=P4, days old)
-    ↓ onLinkAccount fires
-    ↓ Detection: newUser.createdAt is old → existing user
-    ↓ Do nothing — leave U1's publicId/displayName alone
-    ↓ Better Auth deletes anon (id=C)
-Result: U1 logs in with their full history. Anon's brief activity (publicId=P3 in apps/api) is orphaned by design.
+Anon on new device, clicks an OAuth button for an ALREADY-EXISTING account
+    ↓ onLinkAccount fires; newUser = the existing user (createdAt is old)
+    ↓
+    ├─ intent === 'signin'  (default — user just wants their old account back)
+    │     ↓ Do nothing — leave the existing user's publicId/displayName alone
+    │     ↓ Better Auth deletes the anon, signs them into the existing account
+    │   Result: full history restored. Anon's brief activity orphaned by design.
+    │
+    └─ intent === 'claim'  (user clicked "Save my account", but it's taken)
+          ↓ throw ctx.redirect('…/login?error=account_already_exists')
+          ↓ existing user untouched; anon untouched
+        Result: friendly error on /login; nothing merged or overwritten.
 ```
 
-### Detection logic (draft — see "Risks under review" below)
+The frontend sets `intent`: the plain login flow uses `'signin'`; the "Save your account" CTA navigates to `/login?intent=claim`, which passes `'claim'`.
+
+### Detection logic (as implemented in `apps/auth/src/auth.ts`)
+
+Fresh-signup detection compares the new user's `createdAt` to its **session's** `createdAt` — a brand-new user is created in the same request as its first session (≈ same instant), an existing user predates the session by days. This is more deterministic than the original `Date.now()` draft (no wall-clock skew, no generous window).
 
 ```ts
 onLinkAccount: async ({ anonymousUser, newUser, ctx }) => {
-  const ageMs = Date.now() - new Date(newUser.createdAt).getTime();
-  const isFreshSignup = ageMs < 60_000;
+  const userMs = new Date(newUser.user.createdAt).getTime();
+  const sessionMs = new Date(newUser.session.createdAt).getTime();
+  const isFreshUser = Math.abs(sessionMs - userMs) < 1000; // 1s window
 
-  if (isFreshSignup) {
-    // Path A
-    await auth.api.updateUser({
-      headers: ctx.headers,
-      body: {
-        publicId: anonymousUser.publicId,
-        displayName: anonymousUser.displayName,
-      },
-    });
+  if (!isFreshUser) {
+    // Path B
+    const state = (await getOAuthState()) as { intent?: string } | null;
+    if (state?.intent === 'claim') {
+      throw ctx.redirect(`${trustedOrigins[0]}/login?error=account_already_exists`);
+    }
+    return; // 'signin' → silent merge into existing account
   }
-  // Path B: do nothing. Anon's apps/api rows become orphans (lazy cleanup).
+
+  // Path A — two-step swap (publicId is UNIQUE): free the anon's slot with a
+  // placeholder first, THEN claim it on newUser. Anon row is deleted right
+  // after this hook returns, so the placeholder never lingers.
+  await ctx.context.internalAdapter.updateUser(anonymousUser.user.id, {
+    publicId: `_linked_${anonymousUser.user.id}`,
+  });
+  await ctx.context.internalAdapter.updateUser(newUser.user.id, {
+    publicId: anonymousUser.user.publicId,
+    displayName: anonymousUser.user.displayName,
+  });
 }
 ```
 
-## Risks under review (must resolve before implementation)
+## Risks — RESOLVED during Phase 1 implementation
 
-The detection logic above has known correctness issues. Each needs a decision or verification step before this plan is safe to implement.
+The four correctness issues flagged in the original draft were all resolved while building + verifying Phase 1 (anon→Google link tested end-to-end in the browser via Playwright, both Path A and Path B). Kept here as a record of why the code looks the way it does.
 
-### Bug 1 — Unique constraint violation on publicId copy (critical)
+### Bug 1 — Unique constraint violation on publicId copy (critical) → ✅ RESOLVED
 
-At the moment `onLinkAccount` fires:
-- **anonymousUser** still exists in the DB with `publicId = P1`
-- **newUser** has been freshly created with `publicId = P2` (from defaultValue generator)
-- Better Auth deletes the anonymous user AFTER the callback returns (assumed — see Verification 1)
+At the moment `onLinkAccount` fires, the anon still holds `publicId = P1` and newUser holds an auto-generated `P2`. Setting `newUser.publicId = P1` while the anon still has it violates the `unique` constraint. **Confirmed in testing** — the link failed with `unable_to_create_user`.
 
-The Path A branch calls `updateUser` to set `newUser.publicId = P1`. But anonymousUser still holds P1 at that moment. With `unique: true` on the column, the UPDATE throws.
+**Fix shipped: mitigation (a) — two-step placeholder swap.** Rename the anon's publicId to `_linked_<id>` first (freeing the slot), then claim P1 on newUser. The anon row is deleted right after the hook returns, so the placeholder is fleeting. Uses `ctx.context.internalAdapter.updateUser(userId, …)` (targets a specific user by id — see Verification 4).
 
-Two outcomes, both bad:
-- If Better Auth rolls back on callback throw → user sees signup error.
-- If Better Auth swallows the error → link completes, anon deleted, newUser keeps P2, all apps/api data keyed to P1 orphans. **Silent data loss.**
+### Bug 2 — 60-second threshold is dangerously generous (high) → ✅ RESOLVED
 
-Mitigation options (pick one before implementing):
+The original `Date.now() - createdAt < 60_000` draft would false-positive for multi-device users. **Fix shipped:** detection now compares the new user's `createdAt` to its **session's** `createdAt` with a **1-second** window. A fresh user is created in the same request as its first session; an existing user predates it by days. No wall-clock dependency, no generous window.
 
-- **(a) Swap via temporary placeholder**: Update anon's publicId to a deterministic placeholder (e.g., `__pending_delete__<id>`) first, then update newUser to P1. Requires using `ctx.context.adapter.update` (lower-level than `auth.api.updateUser`).
-- **(b) Separate `user_identity` table**: Move `publicId` out of the user table into its own table; the link operation REPOINTS the existing row (`UPDATE user_identity SET user_id = newUser.id WHERE public_id = anonymousUser.publicId`). No conflict, but adds a JOIN to every publicId→user resolution.
-- **(c) Explicit delete-before-update**: Force anon deletion inside the callback before updating newUser. Depends on Better Auth allowing this.
+### Bug 3 — Timestamp heuristic isn't deterministic (medium) → ✅ MOSTLY RESOLVED
 
-### Bug 2 — 60-second threshold is dangerously generous (high)
+Comparing two DB-issued timestamps from the same request (`session.createdAt` vs `user.createdAt`) is far more robust than the original wall-clock `Date.now()` proxy — both come from the DB, in the same transaction, so skew is a non-issue. It's still technically a timestamp comparison rather than an explicit "isNewUser" flag, but in practice it's deterministic for the cases that matter. Good enough; revisit only if Better Auth later exposes a first-class new-user signal.
 
-Realistic scenario:
-- T=0: User signs up via Google. newUser created with publicId=P.
-- T=30s: Same person, different browser, gets anon session with publicId=Q. Chats briefly.
-- T=55s: Tries to sign in with the just-created Google account.
+### Bug 4 — Direct signups leave displayName NULL (medium) → ✅ RESOLVED
 
-In `onLinkAccount`: `newUser.createdAt` is 55s ago → `isFreshSignup = true` (false positive). Path A branch runs → newUser.publicId overwritten from P to Q. **All apps/api data created in the last 55s under P orphans, AND the user's stable identity is wrongly changed mid-session.**
+`databaseHooks.user.create.before` runs on EVERY user create (anon, OAuth, email) and sets both `publicId` and `displayName` (currently the same UUID). So direct OAuth signups that never hit `onLinkAccount` still get a non-NULL displayName. `anonymous().generateName` is not used — the database hook is the single source of truth.
 
-Multi-device users will hit this. Not an edge case.
+## Verification items — CONFIRMED via testing
 
-Mitigation: tighten the threshold. Better Auth's normal callback fires <1s after user creation. **1-second threshold** is safe for true Path A signups and effectively eliminates false positives.
+All confirmed by building Phase 1 and running the flows against a real local Postgres + browser:
 
-### Bug 3 — Timestamp heuristic isn't deterministic (medium)
+1. **Callback ordering**: Better Auth deletes the anonymous user AFTER `onLinkAccount` returns — confirmed (the two-step swap relies on this, and it works).
+2. **Error handling in `onLinkAccount`**: a plain `throw new Error()` surfaces as a server error and does NOT honor `errorCallbackURL`; `throw ctx.redirect(url)` IS the mechanism that overrides Better Auth's default OAuth-completion and redirects the browser. (A plain `APIError` also didn't trigger the redirect — Better Auth fell through to silent sign-in.)
+3. **`ctx` content**: no first-class "isNewUser" flag was needed — the session/user `createdAt` comparison covers it. `getOAuthState()` exposes the client-supplied `additionalData` (used for `intent`).
+4. **`internalAdapter.updateUser` targeting**: takes an explicit user id, so we can modify either the anon or newUser by id from within the callback. (Used over `auth.api.updateUser`, which targets the session user.)
 
-`createdAt` proximity is a proxy for "this user was created in this request." A deterministic signal would be safer:
+## Architecture decision — COMMITTED: (A) anonymous plugin
 
-Candidates to investigate (Verification 3):
-- `ctx.context.isNewUser` or similar flag, if exposed by Better Auth.
-- `newUser.updatedAt === newUser.createdAt` — fresh user → fields equal. But the link operation may bump updatedAt, breaking this.
-- Query the `account` table — fresh signup → only this request's account row exists.
-
-If no deterministic signal is available, the 1-second timestamp heuristic is the practical fallback. But it remains a heuristic.
-
-### Bug 4 — Direct (non-anon-originated) signups never hit onLinkAccount, so displayName stays NULL (medium)
-
-If a user lands on chatarooni for the first time and immediately clicks Sign in → Google (without first engaging with chat anonymously), `onLinkAccount` does NOT fire (no anon user to link). newUser is created with:
-- auto-generated `publicId` ✅
-- `name` from Google's profile ✅
-- `displayName` = **NULL** ❌ — `anonymous().generateName` only runs for anon user creation, not direct signups
-
-Then AccountMenu has no displayName to show. Fallback could leak the real Google name into the UI — which violates the "never display real name" architectural principle.
-
-Mitigation: use `databaseHooks.user.create.before` to populate `displayName` on EVERY user create (anon or direct):
-
-```ts
-databaseHooks: {
-  user: {
-    create: {
-      before: async (user) => ({
-        data: {
-          ...user,
-          displayName: user.displayName ?? randomDisplayName(),
-        },
-      }),
-    },
-  },
-}
-```
-
-This makes `anonymous().generateName` redundant (it can be dropped). Single source of truth for displayName assignment.
-
-## Verification items (need Better Auth source / test deploy to confirm)
-
-Each of these is an unverified assumption in the current plan. Must verify before implementation.
-
-1. **Callback ordering**: Does Better Auth delete the anonymous user BEFORE the callback runs, AFTER it, or transactionally with the link operation? Bug 1 depends on this.
-2. **Error handling in `onLinkAccount`**: If the callback throws, does Better Auth roll back the link, swallow the error and continue, or propagate it to the client? Bugs 1 and 2 manifest differently based on this.
-3. **`ctx` content**: Does the callback's `ctx` expose any flag indicating "this is a brand-new user"? If yes, replace the timestamp heuristic.
-4. **`auth.api.updateUser` targeting**: Does it always update the session's user, or can it target a specific user by ID? Determines whether we can safely modify newUser from within the callback if the session isn't yet swapped.
-
-## Reconsideration: stateless guests vs anon plugin
-
-The four bugs above + four verification items expose a real complexity cost in the anon-plugin approach. Comparing the two architectures with these costs in view:
-
-| Approach | Where complexity lives | Long-term |
-|---|---|---|
-| **Anonymous plugin + publicId stability** | Concentrated in apps/auth (onLinkAccount + databaseHooks + verification + tested edge cases). One-time cost, hidden in auth layer. | apps/api stays simple — one JWT verify path. |
-| **Stateless guests** (apps/api issues guest JWTs, no DB row for anons) | Distributed across apps/api (two JWT verify paths + guest token issuance + cookie management). Recurring cost — every new endpoint branches on guest vs real. | No onLinkAccount, no publicId conflicts, no orphan cleanup, no Better Auth source diving. |
-
-The anon plugin pays off long-term IF the verification work is done thoroughly. The stateless approach avoids the entire class of bugs above at the cost of slightly more code in apps/api.
-
-**Decision pending.** Choose between:
-- **(A) Commit to anon plugin**: do the verification work, fix all 4 bugs, then implement Phase 1.
-- **(B) Switch to stateless**: rewrite this doc to reflect stateless architecture; apps/api accepts both Better Auth JWTs (real users) and self-issued guest JWTs.
-
-Both are defensible. Time investment differs significantly.
+Decision resolved in favour of **(A) Better Auth's `anonymous` plugin + publicId stability** (not stateless guests). The four bugs above turned out to be tractable — concentrated in `apps/auth`, one-time cost, verified. apps/api keeps a single JWT-verify path. The stateless alternative was rejected: it would distribute complexity across apps/api (two auth paths) and give anon users zero persistence.
 
 ## JWT claims
 
-Better Auth's `jwt()` plugin's `definePayload`:
+Better Auth's `jwt()` plugin's `definePayload` — **as currently implemented**:
 
 ```ts
 definePayload: ({ user }) => ({
-  publicId: user.publicId,         // stable identity for apps/api
-  isAnonymous: user.isAnonymous,   // boolean — endpoint authorization branching
-  displayName: user.displayName,   // performance: avoid per-request lookup
-  image: user.image,               // avatar URL — avoid per-request lookup
-  role: user.role,                 // permission level (separate concern from account type)
+  role: user.role,                       // permission level (separate from account type)
+  publicId: user.publicId,               // stable identity for apps/api
+  displayName: user.displayName,         // perf: avoid per-request lookup
+  isAnonymous: user.isAnonymous ?? false, // boolean — endpoint authorization branching
 }),
 ```
+
+`libs/core/auth`'s guard validates `sub`, `role`, `publicId`, `displayName` are present (and verifies `iss`/`aud` via JWKS).
+
+**One delta from the original plan:** `image` is NOT in the JWT yet — the custom-avatar system is deferred (see User table). Add `image` to the payload when avatars land.
+
+Note: `audience` is left at the Better Auth default (`aud` = `iss` = the auth service URL). The "domain-wide `aud: 'chatarooni'`" idea was discussed but not shipped; apps/api validates `aud` against the default today.
 
 apps/api reads `publicId` from claims and uses it as the user identifier in all queries. Never queries apps/auth's DB. Verifies JWT via JWKS (existing `libs/core/auth`).
 
@@ -248,10 +208,10 @@ apps/api reads `publicId` from claims and uses it as the user identifier in all 
 - **`image`** — **custom random avatar URL** (NOT Google's profile picture). Generated server-side at user creation, seeded by publicId for stability across devices. Same reasoning as displayName: included in JWT to avoid a per-request lookup when rendering avatars in chat / friend lists / message bubbles. Same staleness caveat applies — JWT carries the URL at time of issue; if the user re-rolls or uploads a custom avatar, the new URL propagates on next JWT refresh.
 - **`role`** — existing in current config (set by admin plugin). Used for permission checks.
 
-### Claims deliberately NOT in the JWT
+### Claims and the JWT
 
-- **`email`** — apps/api never needs email for business logic (chat, friends, blocks, reports all key off publicId). Including it would: (1) bloat the token, (2) leak PII into logs/traces where JWTs commonly appear, (3) widen the blast radius if a JWT leaks. If apps/api ever needs email for moderation, it can call apps/auth's `getUser` endpoint with the publicId. Pay the lookup cost in the rare case, not on every request.
-- **`name`** (real name from OAuth) — never displayed; only used for audit/abuse evidence. apps/api doesn't need it.
+- **`email`** — ✅ **REMOVED from the payload.** apps/api never needs email for business logic (chat, friends, blocks, reports all key off publicId). Keeping it out: (1) shrinks the token, (2) avoids PII in logs/traces where JWTs commonly appear, (3) shrinks the blast radius if a JWT leaks. If apps/api ever needs email for moderation, call apps/auth's `getUser` with the publicId.
+- **`name`** (real name from OAuth) — correctly NOT in the JWT. Never displayed; only used for audit/abuse evidence. apps/api doesn't need it.
 
 ## apps/api implications
 
@@ -370,25 +330,25 @@ WHERE "isAnonymous" = true
 
 ### Phase 1A — apps/auth foundation
 
-1. Add `publicId` additionalField (UUID, unique, default generator).
-2. Add `displayName` additionalField.
-3. Random name generator (~200 adjectives × ~200 nouns + 2-digit number).
-4. Add `anonymous` plugin with `generateName` + `onLinkAccount`.
-5. Update `jwt` plugin's `definePayload` to include `publicId`, `isAnonymous`, `displayName`.
-6. DB migration: add columns, indexes (`publicId` unique).
-7. Cleanup cron (or scheduled function) for stale anon users.
+1. ~~Add `publicId` additionalField (UUID, unique, default generator).~~ ✅ done — generated in `databaseHooks.user.create.before` via `uuidv7()` (not `defaultValue`); field shared via `@chatarooni/auth/fields`.
+2. ~~Add `displayName` additionalField.~~ ✅ done — currently mirrors `publicId`.
+3. **Random name generator** (~200 adjectives × ~200 nouns + 2-digit number). DEFERRED — displayName is the raw publicId UUID until this lands.
+4. ~~Add `anonymous` plugin with `generateName` + `onLinkAccount`.~~ ✅ done — `onLinkAccount` shipped (Path A swap + Path B intent routing). `generateName` NOT used — the database hook is the single source of truth for displayName.
+5. ~~Update `jwt` plugin's `definePayload` to include `publicId`, `isAnonymous`, `displayName`.~~ ✅ done — payload is `role, publicId, displayName, isAnonymous`; `sub` set to publicId via `getSubject`; `email` deliberately excluded.
+6. ~~DB migration: add columns, indexes (`publicId` unique).~~ ✅ done — migrated local + the remote Railway `auth` DB.
+7. **Cleanup cron** (or scheduled function) for stale anon users. PENDING — see Backend TODO.
 
 ### Phase 1B — apps/web wiring
 
-8. Add `anonymousClient` plugin to authClient.
-9. Lazy `signIn.anonymous()` on first chat-engagement click.
-10. Remove Name field + sign-up mode from login form.
-11. AccountMenu: display `displayName`, adapt CTAs by `isAnonymous`.
+8. ~~Add `anonymousClient` plugin to authClient.~~ ✅ done — plus `inferAdditionalFields` on both web clients (sourced from `@chatarooni/auth/fields`).
+9. **Lazy `signIn.anonymous()` on first chat-engagement click.** PARTIAL — wired to the login button; still needs to fire lazily on first chat engagement (blocked on `/chat`).
+10. ~~Remove Name field + sign-up mode from login form.~~ ✅ done.
+11. **AccountMenu: display `displayName`, adapt CTAs by `isAnonymous`.** PARTIAL — displays `displayName` (icon-only on phones since it's a UUID); CTA adaptation ("Save your account") still TODO.
 
 ### Phase 1C — Verify
 
-12. Path A smoke test: anon signs up via Google → publicId preserved → no data loss.
-13. Path B smoke test: anon logs in with existing account → existing user untouched → no errors.
+12. ~~Path A smoke test: anon signs up via Google → publicId preserved → no data loss.~~ ✅ verified end-to-end via Playwright.
+13. ~~Path B smoke test: anon logs in with existing account → existing user untouched → no errors.~~ ✅ verified — both `intent=signin` (silent merge) and `intent=claim` (friendly error) paths; existing user's publicId untouched.
 
 ### Phase 2 — apps/api chat domain
 
