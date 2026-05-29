@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, Mail } from 'lucide-react';
+import { Eye, EyeOff, Ghost, Mail } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { BrandMark } from '@/components/brand-mark';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import {
   FieldDescription,
   FieldGroup,
   FieldLabel,
+  FieldSeparator,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 
@@ -94,10 +95,8 @@ function errorMessageFor(code: string | null): string | null {
     // banner — not from here, which is sign-in mode.)
     case 'account_already_linked_to_different_user':
       return "You already have an account with that provider. Sign in to it below — your guest chats won't carry over.";
-    // signIn.social with a provider that has no account yet — OAuth signup is
-    // disabled, so accounts are only created via the /chat gate.
-    case 'signup_disabled':
-      return 'No account found for that. Tap “Start chatting” to create one.';
+    // (signup_disabled isn't handled here — login/page.tsx redirects it to the
+    // /chat gate with a notice, so it never reaches this form.)
     default:
       return 'Sign-in failed. Please try again.';
   }
@@ -198,6 +197,11 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
   const handleGoogle = () => handleSocial('google');
   const handleFacebook = () => handleSocial('facebook');
 
+  // → the /chat gate, which collects gender (required) and creates the guest.
+  // We don't call signIn.anonymous directly here: an anon needs a gender, and
+  // the gate is where it's picked.
+  const handleAnonymous = () => router.push('/chat');
+
   const handleForgotSubmit = async () => {
     setLoading(true);
     setError(null);
@@ -287,13 +291,12 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
                     variant="outline"
                     onClick={() => setMode('sign-in')}
                     disabled={loading}
-                    className="h-auto py-2"
                   >
                     <Mail className="size-5" />
-                    <span className="flex flex-col items-start gap-0.5 leading-tight">
-                      <span>Continue with email</span>
-                      <span className="text-xs font-normal opacity-70">
-                        Existing users only
+                    <span>
+                      Continue with email{' '}
+                      <span className="font-normal opacity-70">
+                        (existing users)
                       </span>
                     </span>
                   </Button>
@@ -423,6 +426,20 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
                 </button>
               </Field>
             )}
+
+            <FieldSeparator>OR</FieldSeparator>
+
+            <Field>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleAnonymous}
+                disabled={loading}
+              >
+                <Ghost className="size-5" />
+                Continue anonymously
+              </Button>
+            </Field>
 
             <FieldDescription className="text-center">
               By continuing, you agree to our{' '}

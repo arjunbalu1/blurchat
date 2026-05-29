@@ -14,10 +14,15 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ intent?: string }>;
+  searchParams: Promise<{ intent?: string; error?: string }>;
 }) {
   const [session, sp] = await Promise.all([getSession(), searchParams]);
   const isAnonymous = session?.user?.isAnonymous ?? false;
+
+  // OAuth signup is disabled, so signing in with a provider that has no account
+  // dead-ends here. Don't strand them — send them to the gate (where accounts
+  // actually begin) with a notice, instead of a confusing message on /login.
+  if (sp.error === 'signup_disabled') redirect('/chat?notice=no-account');
 
   // ?intent=claim only means something for an anon (the guest being upgraded).
   // For a logged-out or real visitor it's inert and misleading — drop it.

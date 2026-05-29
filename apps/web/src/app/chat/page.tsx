@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth-session';
 import { AnonymousBanner } from '@/components/anonymous-banner';
 import { SessionRefresh } from '@/components/session-refresh';
 import { BeforeYouStart } from '@/components/before-you-start';
+import { NoticeToast } from '@/components/notice-toast';
 
 export const metadata: Metadata = {
   title: 'Chat',
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export default async function ChatPage({
   searchParams,
 }: {
-  searchParams: Promise<{ upgraded?: string }>;
+  searchParams: Promise<{ upgraded?: string; notice?: string }>;
 }) {
   const [session, sp] = await Promise.all([getSession(), searchParams]);
 
@@ -23,9 +24,17 @@ export default async function ChatPage({
   // gendered anonymous session — the only way to enter. Every real account has
   // a gender (required at creation), so a logged-in user never sees the gate.
   if (!session?.user?.gender) {
+    // notice=no-account → redirected here from a sign-in attempt with a
+    // provider that has no account yet (OAuth signup is disabled). Surface it
+    // as a toast rather than cluttering the gate.
+    const notice =
+      sp.notice === 'no-account'
+        ? "Couldn't find an account for that — let's get you started."
+        : null;
     return (
       // Mobile: dock the gate to the bottom as a sheet. sm+: centered modal.
       <main className="flex h-svh flex-col justify-end sm:items-center sm:justify-center sm:px-4">
+        {notice && <NoticeToast message={notice} />}
         <BeforeYouStart />
       </main>
     );

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeColorSync } from '@/components/theme-color-sync';
+import { Toaster } from '@/components/ui/sonner';
 import './global.css';
 
 const fontSans = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -84,7 +86,9 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
+          <ThemeColorSync />
           {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
