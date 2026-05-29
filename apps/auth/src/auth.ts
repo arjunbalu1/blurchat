@@ -211,6 +211,15 @@ export const auth = betterAuth({
     cookieCache: { enabled: true, maxAge: 60 * 5 },
   },
 
+  // OAuth callback errors that fail BEFORE the state is looked up (e.g. a
+  // replayed/expired state from a back-button re-submit of the Google picker)
+  // can't recover the per-request errorCallbackURL, so Better Auth would fall
+  // back to its built-in error page on the auth origin. Point that fallback at
+  // the web app's /login (trustedOrigins[0] = the web origin, local 5173 / prod
+  // apex), where ?error= is surfaced as a message with a retry. The recoverable
+  // cases (e.g. signup_disabled) still use the per-call errorCallbackURL.
+  onAPIError: { errorURL: `${trustedOrigins[0]}/login` },
+
   advanced: {
     database: { generateId: 'uuid' }, // record ids as UUIDs (not the default base62)
     // share the session cookie across subdomains (auth ↔ app); also avoids Safari ITP

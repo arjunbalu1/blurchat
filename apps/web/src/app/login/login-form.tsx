@@ -95,6 +95,11 @@ function errorMessageFor(code: string | null): string | null {
     // banner — not from here, which is sign-in mode.)
     case 'account_already_linked_to_different_user':
       return "You already have an account with that provider. Sign in to it below — your guest chats won't carry over.";
+    // OAuth state expired or was replayed (e.g. a back-button re-submit of the
+    // Google picker). Better Auth's onAPIError.errorURL fallback routes it here;
+    // the flow just needs a fresh start.
+    case 'please_restart_the_process':
+      return 'That sign-in attempt expired. Please try again.';
     // (signup_disabled isn't handled here — login/page.tsx redirects it to the
     // /chat gate with a notice, so it never reaches this form.)
     default:
@@ -236,14 +241,17 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
     else if (emailMode === 'forgot') handleForgotSubmit();
   };
 
+  // Single error slot, rendered at the top of the card (above the buttons) so
+  // page-load OAuth errors (?error=) and inline submit errors share one
+  // consistent, prominent spot instead of splitting the button stack.
   const errorMessage = error && (
-    <p
-      className="text-center text-sm text-destructive"
+    <div
+      className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-center text-sm text-destructive"
       role="alert"
       aria-live="polite"
     >
       {error}
-    </p>
+    </div>
   );
 
   return (
@@ -258,6 +266,7 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
       <CardContent>
         <form onSubmit={handleFormSubmit}>
           <FieldGroup className="gap-3">
+            {errorMessage}
             <Field>
               <Button
                 type="button"
@@ -283,25 +292,22 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
             </Field>
 
             {emailMode === 'collapsed' && (
-              <>
-                {errorMessage}
-                <Field>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setMode('sign-in')}
-                    disabled={loading}
-                  >
-                    <Mail className="size-5" />
-                    <span>
-                      Continue with email{' '}
-                      <span className="font-normal opacity-70">
-                        (existing users)
-                      </span>
+              <Field>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setMode('sign-in')}
+                  disabled={loading}
+                >
+                  <Mail className="size-5" />
+                  <span>
+                    Continue with email{' '}
+                    <span className="font-normal opacity-70">
+                      (existing users)
                     </span>
-                  </Button>
-                </Field>
-              </>
+                  </span>
+                </Button>
+              </Field>
             )}
 
             {emailMode === 'sign-in' && (
@@ -360,7 +366,6 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
                     </button>
                   </div>
                 </Field>
-                {errorMessage}
                 <Field>
                   <Button type="submit" disabled={loading}>
                     {loading ? 'Signing in…' : 'Sign in'}
@@ -388,7 +393,6 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
                     We&apos;ll email you a link to reset or set your password.
                   </FieldDescription>
                 </Field>
-                {errorMessage}
                 <Field>
                   <Button type="submit" disabled={loading}>
                     {loading ? 'Sending…' : 'Send reset link'}

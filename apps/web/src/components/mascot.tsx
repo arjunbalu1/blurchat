@@ -193,7 +193,7 @@ export function Mascot({
 // different direction and fades as it scrolls past. Drop into any
 // `relative w-full overflow-hidden` section to render the cluster.
 export function MascotCluster() {
-  // Stacking order (top → bottom as they overlap): blue, yellow, orange, purple, green.
+  // Stacking order (top → bottom as they overlap): teal, yellow, orange, purple, green.
   // DOM order is the reverse: first rendered = bottom of stack.
   return (
     <>
@@ -234,7 +234,7 @@ export function MascotCluster() {
         enterFrom="bottom"
       />
       <Mascot
-        src="/mascots/blue.png"
+        src="/mascots/teal.png"
         width={615}
         height={615}
         containerClassName="bottom-0 right-12 xl:right-72"

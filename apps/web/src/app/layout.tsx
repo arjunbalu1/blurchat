@@ -86,9 +86,9 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
+          <Toaster />
           <ThemeColorSync />
           {children}
-          <Toaster />
         </ThemeProvider>
       </body>
     </html>
