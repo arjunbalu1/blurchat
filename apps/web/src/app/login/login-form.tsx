@@ -89,14 +89,18 @@ type EmailMode = 'collapsed' | 'sign-in' | 'forgot' | 'forgot-sent';
 function errorMessageFor(code: string | null): string | null {
   if (!code) return null;
   switch (code) {
-    case 'account_already_exists':
-      return 'An account already exists for that provider. Sign out and sign in again to use it.';
+    // linkSocial (claim flow): the chosen provider account already belongs to a
+    // real account, so the guest can't claim it. They're still the guest. A
+    // DIFFERENT new account keeps their data (Path A transfer); signing into the
+    // existing one discards the guest (Path B).
+    case 'account_already_linked_to_different_user':
+      return 'That account already exists. Continue with a different account to keep your chats, or sign in to the existing one (your guest chats will be lost).';
     default:
       return 'Sign-in failed. Please try again.';
   }
 }
 
-export function LoginForm() {
+export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [emailMode, setEmailMode] = useState<EmailMode>('collapsed');
@@ -114,15 +118,16 @@ export function LoginForm() {
     if (msg) setError(msg);
   }, [searchParams]);
 
-  // /login?intent=claim → arrived via "Save my anon as a real account" CTA.
-  // The backend reads this from OAuth additionalData and errors when the
-  // OAuth identity already has an existing account. Anything else = sign-in
-  // intent (silent merge into existing account if one exists).
+  // /login?intent=claim → arrived via the "Claim account" CTA. Only meaningful
+  // for an active anonymous session (the thing being upgraded). When both hold,
+  // the social buttons link the provider to the current anon account in place
+  // (linkSocial) instead of a normal sign-in — so it errors, rather than signing
+  // into someone else's account, if the provider identity is already taken.
   const isClaimMode = searchParams.get('intent') === 'claim';
-  const intent = isClaimMode ? 'claim' : 'signin';
+  const claiming = isClaimMode && isAnonymous;
 
   const onAuthSuccess = () => {
-    router.push('/');
+    router.push('/chat');
     router.refresh();
   };
 
@@ -144,49 +149,51 @@ export function LoginForm() {
     }
   };
 
-  const handleGoogle = async () => {
+  const handleSocial = async (provider: 'google' | 'facebook') => {
     setLoading(true);
     setError(null);
+    const origin = window.location.origin;
+
+    // An OAuth flow from an anon session can leave the cached cookie stale:
+    // claim (linkSocial) and Path A sign-in (signIn.social → publicId swap in
+    // onLinkAccount) both mutate identity AFTER the callback sets the cookie.
+    // Path B (sign into an existing account) is already correct — but we can't
+    // tell A from B here (depends which account the user picks), so we flag
+    // every anon OAuth. ?upgraded=1 has /chat re-issue a fresh cookie (and
+    // suppress the banner meanwhile); for Path B that refresh is a harmless
+    // no-op. A logged-out sign-up gets a correct cookie from the callback → no flag.
+    const callbackURL = isAnonymous
+      ? `${origin}/chat?upgraded=1`
+      : `${origin}/chat`;
+    const errorCallbackURL = `${origin}/login`;
 
     try {
-      await authClient.signIn.social(
-        {
-          provider: 'google',
-          callbackURL: `${window.location.origin}/`,
-          errorCallbackURL: `${window.location.origin}/login`,
-          additionalData: { intent },
-        },
-        {
-          onError: (ctx) =>
-            setError(ctx.error.message ?? 'Google sign-in failed.'),
-        }
-      );
+      if (claiming) {
+        // linkSocial attaches the provider to the current session; if that
+        // provider account already exists it errors (→ errorCallbackURL)
+        // WITHOUT signing in, so the guest stays.
+        await authClient.linkSocial(
+          { provider, callbackURL, errorCallbackURL },
+          {
+            onError: (ctx) =>
+              setError(ctx.error.message ?? 'Could not link that account.'),
+          }
+        );
+      } else {
+        await authClient.signIn.social(
+          { provider, callbackURL, errorCallbackURL },
+          {
+            onError: (ctx) => setError(ctx.error.message ?? 'Sign-in failed.'),
+          }
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFacebook = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      await authClient.signIn.social(
-        {
-          provider: 'facebook',
-          callbackURL: `${window.location.origin}/`,
-          errorCallbackURL: `${window.location.origin}/login`,
-          additionalData: { intent },
-        },
-        {
-          onError: (ctx) =>
-            setError(ctx.error.message ?? 'Facebook sign-in failed.'),
-        }
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleGoogle = () => handleSocial('google');
+  const handleFacebook = () => handleSocial('facebook');
 
   const handleForgotSubmit = async () => {
     setLoading(true);
@@ -210,6 +217,13 @@ export function LoginForm() {
   };
 
   const handleAnonymous = async () => {
+    // Already anonymous — nothing to create; just enter the chat. (Calling
+    // signIn.anonymous again errors with "cannot sign in again anonymously".)
+    if (isAnonymous) {
+      router.push('/chat');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -217,7 +231,7 @@ export function LoginForm() {
       await authClient.signIn.anonymous(undefined, {
         onError: (ctx) =>
           setError(ctx.error.message ?? 'Anonymous sign-in failed.'),
-        onSuccess: () => router.push('/'),
+        onSuccess: () => router.push('/chat'),
       });
     } finally {
       setLoading(false);
@@ -282,8 +296,6 @@ export function LoginForm() {
                 Continue with Facebook
               </Button>
             </Field>
-
-            <FieldSeparator>OR</FieldSeparator>
 
             {emailMode === 'collapsed' && (
               <>
@@ -430,6 +442,8 @@ export function LoginForm() {
                 </button>
               </Field>
             )}
+
+            <FieldSeparator>OR</FieldSeparator>
 
             <Field>
               <Button

@@ -1,6 +1,9 @@
 import 'server-only';
 import { createAuthClient } from 'better-auth/client';
-import { inferAdditionalFields } from 'better-auth/client/plugins';
+import {
+  anonymousClient,
+  inferAdditionalFields,
+} from 'better-auth/client/plugins';
 import { userAdditionalFields } from '@chatarooni/auth/fields';
 
 // Server-only auth client — uses better-auth/client (no React/nano-stores)
@@ -15,5 +18,8 @@ const baseURL =
 
 export const authServerClient = createAuthClient({
   baseURL,
-  plugins: [inferAdditionalFields({ user: userAdditionalFields })],
+  plugins: [
+    anonymousClient(),
+    inferAdditionalFields({ user: userAdditionalFields }),
+  ],
 });

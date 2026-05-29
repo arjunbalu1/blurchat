@@ -1,5 +1,4 @@
 import { betterAuth } from 'better-auth';
-import { getOAuthState } from 'better-auth/api';
 import { openAPI } from 'better-auth/plugins';
 import { admin } from 'better-auth/plugins/admin';
 import { anonymous } from 'better-auth/plugins/anonymous';
@@ -46,6 +45,21 @@ const baLogger = pino({
       },
 }).child({ context: 'better-auth' });
 
+// Decode (not verify) the claims of an OAuth ID token. Better Auth already
+// validated it during the callback, so we only need to read the payload to
+// adopt the provider profile when an anonymous user claims their account.
+function decodeIdTokenClaims(
+  idToken?: string | null,
+): Record<string, unknown> | null {
+  const payload = idToken?.split('.')[1];
+  if (!payload) return null;
+  try {
+    return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+  } catch {
+    return null;
+  }
+}
+
 export const auth = betterAuth({
   appName: 'chatarooni',
   database: new Pool({ connectionString: process.env.DATABASE_URL }),
@@ -91,6 +105,52 @@ export const auth = betterAuth({
         },
       },
     },
+    account: {
+      create: {
+        // The "claim" flow upgrades an anon in place via linkSocial, which
+        // links a provider account but leaves the user anonymous with its temp
+        // profile. Promote it to a real account and adopt the OAuth profile.
+        // Guarded so it only fires for the anon-link case (no-op for ordinary
+        // OAuth signups / real users linking a second provider). signIn.anonymous
+        // creates no account row, so this never touches a still-guest session.
+        after: async (account, ctx) => {
+          if (!ctx) return;
+          // isAnonymous is an anonymous()-plugin column; the adapter's return
+          // type is the base User, so narrow it explicitly.
+          const user = (await ctx.context.internalAdapter.findUserById(
+            account.userId,
+          )) as { isAnonymous?: boolean } | null;
+          if (!user?.isAnonymous) return;
+
+          // linkSocial's redirect path doesn't update the user, so pull the
+          // profile from the provider's already-validated ID token (a JWT).
+          const claims = decodeIdTokenClaims(account.idToken);
+          const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
+
+          const updates: Record<string, unknown> = { isAnonymous: false };
+          const name = str(claims?.name);
+          const image = str(claims?.picture);
+          if (name) updates.name = name; // audit only — not displayed
+          if (image) updates.image = image;
+
+          // email is UNIQUE: only adopt if no other account already holds it
+          // (e.g. a separate email/password account with the same address).
+          // Otherwise keep the temp email — they still sign in via the provider.
+          const email = str(claims?.email)?.toLowerCase();
+          if (email && !(await ctx.context.internalAdapter.findUserByEmail(email))) {
+            updates.email = email;
+            updates.emailVerified = claims?.email_verified === true;
+          } else if (email) {
+            baLogger.warn(
+              { userId: account.userId },
+              'claim: provider email already in use — keeping temp email',
+            );
+          }
+
+          await ctx.context.internalAdapter.updateUser(account.userId, updates);
+        },
+      },
+    },
   },
 
   // Google activates only once its credentials are set in env
@@ -111,6 +171,12 @@ export const auth = betterAuth({
       enabled: true,
       trustedProviders: ['google'],
       updateUserInfoOnLink: true,
+      // An anonymous user's email is a generated temp address, so it never
+      // matches the real email of the provider being linked. Required for the
+      // anon→real "claim" flow (linkSocial); only loosens explicit, user-
+      // initiated linking (not sign-in auto-linking), and only Google (trusted)
+      // is enabled.
+      allowDifferentEmails: true,
     },
   },
 
@@ -142,16 +208,17 @@ export const auth = betterAuth({
   plugins: [
     admin(),
     anonymous({
-      // Better Auth fires onLinkAccount whenever an anon user OAuths. Two cases:
+      // Fires when an anon user signs IN via OAuth (signIn.social) and Better
+      // Auth establishes a session for another user. Two cases:
       //   (a) Fresh OAuth account → transfer publicId/displayName forward so
       //       pre-link records (chat etc. keyed by publicId) keep working.
-      //   (b) Existing OAuth account → behavior depends on user intent, which
-      //       the client signals via additionalData.intent ('claim' | 'signin'):
-      //         - 'claim': user wanted to upgrade anon → real, but the OAuth
-      //                    account is taken. Redirect with an error.
-      //         - 'signin' (or unset): user wanted to switch to their existing
-      //                                 account. Silently let the merge happen
-      //                                 (don't overwrite the existing publicId).
+      //   (b) Existing OAuth account → silent sign-in; anon data discarded by
+      //       design (Path B). Don't touch the existing user's publicId.
+      //
+      // NOTE: the "claim" (upgrade-in-place) flow does NOT come here — it uses
+      // linkSocial, which never creates a new session, so this hook doesn't run.
+      // That's deliberate: claim must fail (not sign in) when the OAuth identity
+      // is already taken, which linkSocial does and signIn.social can't.
       //
       // Detect fresh vs existing by comparing user.createdAt to session.createdAt
       // — a fresh user is created at (≈) the same instant as its first session.
@@ -160,19 +227,8 @@ export const auth = betterAuth({
         const sessionMs = new Date(newUser.session.createdAt).getTime();
         const isFreshUser = Math.abs(sessionMs - userMs) < 1000;
 
-        if (!isFreshUser) {
-          const state = (await getOAuthState()) as { intent?: string } | null;
-          if (state?.intent === 'claim') {
-            // ctx.redirect (not APIError) is the only way to override Better
-            // Auth's default "silent merge" behavior for OAuth callbacks.
-            throw ctx.redirect(
-              `${trustedOrigins[0]}/login?error=account_already_exists`,
-            );
-          }
-          // signin intent (or unspecified): let Better Auth silently sign the
-          // user into their existing account. Don't touch publicId.
-          return;
-        }
+        // Existing account (Path B): silent sign-in, leave its publicId alone.
+        if (!isFreshUser) return;
 
         // Two-step swap because publicId is UNIQUE: free anon's slot first by
         // renaming, then claim it on newUser. The anonymous() plugin deletes

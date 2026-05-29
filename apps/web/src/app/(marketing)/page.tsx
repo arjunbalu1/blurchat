@@ -1,13 +1,16 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { MascotCluster } from '@/components/mascot';
+import { StartChattingButton } from '@/components/start-chatting-button';
+import { getSession } from '@/lib/auth-session';
 
 export const metadata: Metadata = {
   alternates: { canonical: '/' },
 };
 
-export default function Home() {
+export default async function Home() {
+  const session = await getSession();
+  const isLoggedIn = Boolean(session?.user);
+
   return (
     <>
       <section className="relative w-full overflow-hidden">
@@ -20,17 +23,7 @@ export default function Home() {
             Free random text chat. Meet new people from around the world — no sign-up
             required.
           </p>
-          <Button asChild size="xl" className="mt-10 font-semibold">
-            <Link href="/chat">
-              <span className="relative flex size-2.5" aria-hidden="true">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-foreground opacity-75" />
-                <span className="relative inline-flex size-2.5 items-center justify-center rounded-full bg-primary-foreground">
-                  <span className="size-1.5 rounded-full bg-emerald-400" />
-                </span>
-              </span>
-              Start chatting
-            </Link>
-          </Button>
+          <StartChattingButton isLoggedIn={isLoggedIn} />
           <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
             <span className="size-1.5 rounded-full bg-primary/70" aria-hidden="true" />
             Video chat — coming soon

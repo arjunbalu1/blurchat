@@ -1,7 +1,9 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { LoginForm } from './login-form';
 import { MascotCluster } from '@/components/mascot';
+import { getSession } from '@/lib/auth-session';
 
 export const metadata: Metadata = {
   title: 'Sign in',
@@ -9,7 +11,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ intent?: string }>;
+}) {
+  const [session, sp] = await Promise.all([getSession(), searchParams]);
+  const isAnonymous = session?.user?.isAnonymous ?? false;
+
+  // ?intent=claim only means something for an anon (the guest being upgraded).
+  // For a logged-out or real visitor it's inert and misleading — drop it.
+  if (sp.intent === 'claim' && !isAnonymous) redirect('/login');
+
   return (
     <section className="relative w-full overflow-hidden">
       <MascotCluster />
@@ -18,7 +31,7 @@ export default function LoginPage() {
             useSearchParams (reads ?error= and ?intent=). Without it, Next.js
             can't statically prerender the shell — fails the build. */}
         <Suspense fallback={null}>
-          <LoginForm />
+          <LoginForm isAnonymous={isAnonymous} />
         </Suspense>
       </main>
     </section>
