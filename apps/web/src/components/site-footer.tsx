@@ -19,9 +19,15 @@ export function SiteFooter() {
           >
             Terms
           </Link>
+          <Link
+            href="/data-deletion"
+            className="transition-colors hover:text-foreground"
+          >
+            Data Deletion
+          </Link>
         </nav>
         <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Chatarooni. All rights reserved.
+          © {new Date().getFullYear()} Chatarooni
         </p>
       </div>
     </footer>
