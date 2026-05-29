@@ -20,7 +20,12 @@ export function StartChattingButton({ isLoggedIn }: { isLoggedIn: boolean }) {
 
     setLoading(true);
     await authClient.signIn.anonymous(undefined, {
-      onSuccess: () => router.push('/chat'),
+      // refresh() invalidates the Router Cache so a back-nav to a page rendered
+      // while logged out (e.g. the home header) re-fetches with the new session.
+      onSuccess: () => {
+        router.push('/chat');
+        router.refresh();
+      },
       // Couldn't bootstrap a guest (rate limit, network) — fall back to /login
       // so the user still has a way in rather than a dead button.
       onError: () => {

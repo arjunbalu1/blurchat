@@ -231,7 +231,10 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
       await authClient.signIn.anonymous(undefined, {
         onError: (ctx) =>
           setError(ctx.error.message ?? 'Anonymous sign-in failed.'),
-        onSuccess: () => router.push('/chat'),
+        // onAuthSuccess push()es to /chat AND refresh()es — the refresh
+        // invalidates the Router Cache so back-nav to a logged-out-rendered
+        // page (home header) re-fetches with the new session.
+        onSuccess: onAuthSuccess,
       });
     } finally {
       setLoading(false);
