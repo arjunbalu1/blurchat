@@ -7,15 +7,18 @@ type SidebarUser = { displayName?: string | null; isAnonymous: boolean };
 // The inner content of the chat sidebar — shared verbatim by the fixed desktop
 // <aside> and the mobile slide-in drawer (see SidebarDrawer). Server component;
 // the interactive bits live in their own client leaves (SidebarTabs, the profile
-// bar). The top padding reserves the iOS notch so the logo clears it when the
-// drawer opens full-height.
+// bar). Top padding is JUST the safe-area inset (no extra 0.75rem) so the
+// Chat/Friends toggle starts flush at the content top — at the same Y as the
+// "Text Chat" header bar. Same height ⇒ the toggle's bottom == the header's
+// bottom border, so the divider under it traces that line across the drawer
+// seam in every banner state. The drawer wrapper adds the banner offset on top.
 //
 // user === null means there's no account yet (the gender gate is up / logged
 // out): the sidebar still shows nav + lists behind the gate, but drops the
 // Premium upsell and profile bar — there's nothing to upsell or sign out of.
 export function ChatSidebar({ user }: { user: SidebarUser | null }) {
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 pt-[env(safe-area-inset-top)] pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
       {/* No logo here — on desktop it lives in the top header bar (see page.tsx);
           the mobile drawer intentionally omits it (the ☰ bar shows context). */}
       <SidebarTabs />

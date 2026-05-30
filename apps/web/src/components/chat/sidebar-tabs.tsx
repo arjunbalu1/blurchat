@@ -15,8 +15,11 @@ import { cn } from '@/lib/utils';
 
 type Tab = 'chat' | 'friends';
 
+// h-8 pills make a compact switch; they're centered in a 48px shell (see
+// SidebarTabs) whose height — not the pills' — matches the "Text Chat" header
+// bar, so the divider beneath still lands on the header's bottom border.
 const TAB_BASE =
-  'flex items-center justify-center gap-1.5 rounded-md py-1.5 text-sm font-medium transition-colors';
+  'flex h-8 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors';
 
 // Chat / Friends switcher plus the list area beneath it. The active tab is local
 // state, so the mobile drawer always reopens on "chat" — a clean, consistent
@@ -27,40 +30,47 @@ export function SidebarTabs() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted/50 p-1">
-        <button
-          type="button"
-          onClick={() => setTab('chat')}
-          aria-pressed={tab === 'chat'}
-          className={cn(
-            TAB_BASE,
-            tab === 'chat'
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          <MessagesSquare className="size-4" />
-          Chat
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('friends')}
-          aria-pressed={tab === 'friends'}
-          className={cn(
-            TAB_BASE,
-            tab === 'friends'
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          <Users className="size-4" />
-          Friends
-        </button>
+      {/* A 48px (3rem) shell — the "Text Chat" header bar's height (h-8 ☰ + py-2)
+          — vertically centers a thinner switch. The SHELL's height, not the
+          pills', is the alignment anchor: it keeps the divider below on the
+          header's bottom border across the drawer seam in every banner state. */}
+      <div className="flex h-12 flex-col justify-center">
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted/50 p-1">
+          <button
+            type="button"
+            onClick={() => setTab('chat')}
+            aria-pressed={tab === 'chat'}
+            className={cn(
+              TAB_BASE,
+              tab === 'chat'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <MessagesSquare className="size-4" />
+            Chat
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('friends')}
+            aria-pressed={tab === 'friends'}
+            className={cn(
+              TAB_BASE,
+              tab === 'friends'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <Users className="size-4" />
+            Friends
+          </button>
+        </div>
       </div>
 
-      {/* Full-bleed divider under the toggle (-mx-3 cancels ChatSidebar's px-3,
-          so it spans edge-to-edge like the header / sidebar borders). */}
-      <div className="-mx-3 h-px shrink-0 bg-border" />
+      {/* Divider — inset to the switch edges, flush to the 48px shell's bottom
+          (-mt-3 cancels the gap-3). The shell matches the header bar's height, so
+          this line continues the header's bottom border across the drawer seam. */}
+      <div className="-mt-3 h-px shrink-0 bg-border" />
 
       {tab === 'chat' ? (
         <>

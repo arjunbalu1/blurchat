@@ -84,7 +84,19 @@ export function SidebarProfile({ user }: { user: SidebarUser }) {
             <Ellipsis className="size-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="top" className="w-56">
+        {/* Chitchat-style: span the FULL sidebar width, flush to both edges,
+            base resting on the divider above the profile row. w-64 == the
+            sidebar; alignOffset -12 pushes the end-aligned menu out past the
+            ⋯'s p-3 gutter so its right edge meets the sidebar edge (the left,
+            being full-width, meets the other). sideOffset 17 ≈ the ⋯-top →
+            divider gap, so the bottom sits on the line rather than past it. */}
+        <DropdownMenuContent
+          align="end"
+          side="top"
+          sideOffset={17}
+          alignOffset={-12}
+          className="w-64"
+        >
           <DropdownMenuItem onClick={() => setTheme(isDark ? 'light' : 'dark')}>
             {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
             {isDark ? 'Light mode' : 'Dark mode'}
