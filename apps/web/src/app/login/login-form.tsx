@@ -23,6 +23,11 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 
+// Facebook login is wired end-to-end, but the FB app isn't live/approved yet —
+// so the button is greyed with a "coming soon" hint rather than dropping people
+// into a dev-mode-only flow. Flip to true once the app is published.
+const FACEBOOK_ENABLED = false;
+
 // Official Google "G" mark — used on every "Continue with Google" button
 // across the web. Inline SVG so there's no extra request and the colors
 // stay true regardless of theme.
@@ -252,7 +257,6 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
     <div
       className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-center text-sm text-destructive"
       role="alert"
-      aria-live="polite"
     >
       {error}
     </div>
@@ -287,11 +291,24 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
               <Button
                 type="button"
                 onClick={handleFacebook}
-                disabled={loading}
-                className="border border-[#dadce0] bg-white text-[#1f1f1f] shadow-sm hover:bg-[#f8f9fa]"
+                disabled={loading || !FACEBOOK_ENABLED}
+                aria-disabled={!FACEBOOK_ENABLED}
+                className="h-auto min-h-9 border border-[#dadce0] bg-white py-2 text-[#1f1f1f] shadow-sm hover:bg-[#f8f9fa]"
               >
                 <FacebookIcon />
-                Continue with Facebook
+                <span className="whitespace-normal text-center leading-tight">
+                  <span className="whitespace-nowrap">
+                    Continue with Facebook
+                  </span>
+                  {!FACEBOOK_ENABLED && (
+                    <>
+                      {' '}
+                      <span className="whitespace-nowrap text-xs font-normal opacity-70">
+                        (coming soon)
+                      </span>
+                    </>
+                  )}
+                </span>
               </Button>
             </Field>
 

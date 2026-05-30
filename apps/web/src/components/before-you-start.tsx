@@ -75,7 +75,7 @@ export function BeforeYouStart() {
                 aria-pressed={gender === value}
                 disabled={loading}
                 className={cn(
-                  'h-auto flex-col gap-0 p-0 text-base', 
+                  'h-auto flex-col gap-0 p-0 text-base',
                   gender === value && 'border-primary ring-2 ring-primary',
                 )}
               >
@@ -84,7 +84,8 @@ export function BeforeYouStart() {
                   alt=""
                   width={160}
                   height={128}
-                  className="h-16 w-auto"
+                  draggable={false}
+                  className="pointer-events-none h-16 w-auto select-none"
                   priority
                 />
                 <span className="-mt-3">{label}</span>

@@ -19,6 +19,12 @@ const STORAGE_KEY = 'mascots-seen';
 const MASCOT_IMAGE_CLASSES =
   'size-[clamp(180px,35vw,400px)] opacity-30 blur-[2px] xl:opacity-60 xl:blur-[1px] 2xl:opacity-100 2xl:blur-none';
 
+// Mirrors the clamp() above so next/image serves a ~display-sized candidate.
+// Without `sizes`, next/image assumes 100vw and ships a full-viewport-wide image
+// for what is decorative -z-10 art. Breakpoints: 35vw caps at 400px ≥1143px wide
+// and floors at 180px ≤514px wide.
+const MASCOT_SIZES = '(min-width: 1143px) 400px, (max-width: 514px) 180px, 35vw';
+
 const REST = { x: '0%', y: '0%', rotate: 0, opacity: 1 };
 
 const ENTRANCE_TRANSITION = {
@@ -182,6 +188,7 @@ export function Mascot({
           height={height}
           priority={priority}
           loading="eager"
+          sizes={MASCOT_SIZES}
           className={`object-contain ${imageClassName ?? ''}`}
         />
       </motion.div>

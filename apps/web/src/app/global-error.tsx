@@ -3,6 +3,20 @@
 import { useEffect } from 'react';
 import './global.css';
 
+// This page renders OUTSIDE next-themes' ThemeProvider, so the pre-paint script
+// that normally sets the `.dark` class never runs here. Read the persisted theme
+// (same localStorage key next-themes writes) directly so the error screen matches
+// what the user was looking at. Falls back to the app's dark default when storage
+// is unreadable or absent (server-side error → no `window`).
+function prefersDark() {
+  if (typeof window === 'undefined') return true;
+  try {
+    return window.localStorage.getItem('theme') !== 'light';
+  } catch {
+    return true;
+  }
+}
+
 // Replaces the root layout when an uncaught client render error escapes every
 // nested error.tsx boundary. Must render its own <html>/<body>.
 export default function GlobalError({
@@ -37,7 +51,11 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={prefersDark() ? 'dark' : undefined}
+      suppressHydrationWarning
+    >
       <body className="font-sans antialiased">
         <main className="mx-auto flex min-h-svh max-w-2xl flex-col items-center justify-center px-6 text-center">
           <p className="text-sm font-medium uppercase tracking-wider text-muted-foreground">

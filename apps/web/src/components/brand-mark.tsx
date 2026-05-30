@@ -39,7 +39,7 @@ export function BrandMark({
   priority = false,
 }: BrandMarkProps) {
   const variant = VARIANTS[size];
-  const containerClass = `flex items-center gap-2 ${variant.text} ${className ?? ''}`;
+  const containerClass = `flex select-none items-center gap-2 ${variant.text} ${className ?? ''}`;
 
   const content = (
     <>
@@ -49,6 +49,7 @@ export function BrandMark({
         width={64}
         height={64}
         priority={priority}
+        draggable={false}
         className={variant.img}
       />
       {/* Logo-only under 360px so the wordmark doesn't collide with the
