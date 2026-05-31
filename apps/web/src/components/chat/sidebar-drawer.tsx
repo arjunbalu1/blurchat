@@ -19,8 +19,8 @@ import {
 // so it stays a server component. Hidden at md+ where the sidebar is a permanent
 // <aside>.
 //
-// `banner` true ⇒ the anonymous strip is pinned above the drawer (z-60). pt-6 =
-// the banner's content height (1.5rem), so the drawer's content starts exactly
+// `banner` true ⇒ the anonymous strip is pinned above the drawer (z-60). pt-8 =
+// the banner's content height (2rem), so the drawer's content starts exactly
 // at the banner's bottom — the same Y the main "Text Chat" header bar starts at.
 // With ChatSidebar's safe-area-only top pad, the toggle then lines up with that
 // header (and its divider with the header's border) in BOTH banner states: the
@@ -70,20 +70,20 @@ export function SidebarDrawer({
         // left width of w-3/4 — same data-variant so tailwind-merge dedupes it).
         className={cn(
           'bg-(--sidebar) data-[vaul-drawer-direction=left]:w-64',
-          banner && 'pt-6',
+          banner && 'pt-8',
         )}
       >
         <DrawerTitle className="sr-only">Menu</DrawerTitle>
         {children}
         {/* Collapse handle — a tab that juts out past the drawer's right edge
             (translate-x-full), sitting level with the profile bar's ⋯: the
-            bottom inset + h-9 mirror the avatar row, so it reads as a grip
+            bottom inset + h-10 mirror the avatar row, so it reads as a grip
             beside it. A visible companion to scrim-tap / swipe; closes via
             DrawerClose. Drawer-only — the desktop <aside> is permanent. */}
         <DrawerClose asChild>
           <button
             aria-label="Collapse sidebar"
-            className="absolute right-0 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] flex h-9 w-6 translate-x-full items-center justify-center rounded-r-lg border border-l-0 border-border bg-(--sidebar) text-muted-foreground shadow-sm transition-colors hover:text-foreground"
+            className="absolute right-0 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] flex h-10 w-6 translate-x-full items-center justify-center rounded-r-lg border border-l-0 border-border bg-(--sidebar) text-muted-foreground shadow-sm transition-colors hover:text-foreground"
           >
             <ChevronLeft className="size-4" />
           </button>

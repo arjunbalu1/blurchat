@@ -18,7 +18,7 @@ type SidebarUser = { displayName?: string | null; isAnonymous: boolean };
 // Premium upsell and profile bar — there's nothing to upsell or sign out of.
 export function ChatSidebar({ user }: { user: SidebarUser | null }) {
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 pt-[env(safe-area-inset-top)] pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+    <div className="flex h-full min-h-0 flex-col gap-3 px-2 pt-[env(safe-area-inset-top)] pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
       {/* No logo here — on desktop it lives in the top header bar (see page.tsx);
           the mobile drawer intentionally omits it (the ☰ bar shows context). */}
       <SidebarTabs />
@@ -26,10 +26,13 @@ export function ChatSidebar({ user }: { user: SidebarUser | null }) {
       {user && (
         <>
           {/* Desktop: an orange-tinted upsell card (border + tint + blurb).
-              Mobile drawer: strip the box and blurb (md:-only) — just the chip. */}
-          <div className="md:rounded-lg md:border md:border-primary/30 md:bg-primary/5 md:p-3">
-            <p className="text-balance text-xs leading-snug text-muted-foreground max-md:hidden">
-              Gender filters, skip the wait, and no ads.
+              md:-mx-1 nudges the box ~4px past the gutter (a touch wider than
+              the toggle / New Chat) and md:-mb-1 pulls it ~4px down toward the
+              profile bar; md:px-2 pads the content in from the border. Mobile
+              drawer: strip the box and blurb (md:-only) — just the chip. */}
+          <div className="md:-mx-1 md:-mb-1 md:rounded-lg md:border md:border-primary/30 md:bg-primary/5 md:px-2 md:py-1">
+            <p className="text-balance text-sm leading-snug text-muted-foreground max-md:hidden">
+              Gender filters, fast queue, no ads.
             </p>
             {/* Neutral chip that flips black/white with the theme, so the orange
                 PRO stays legible on either. Text mirrors the wordmark —
@@ -39,12 +42,12 @@ export function ChatSidebar({ user }: { user: SidebarUser | null }) {
                 hover:bg-primary so only the gradient paints (the real hover is
                 opacity). */}
             <Button
-              size="sm"
-              className="w-full border border-border bg-transparent bg-linear-to-b from-white to-neutral-100 font-semibold text-foreground shadow-sm transition-opacity hover:bg-transparent hover:opacity-90 md:mt-2.5 dark:from-neutral-900 dark:to-neutral-950"
+              size="lg"
+              className="w-full border border-border bg-transparent bg-linear-to-b from-white to-neutral-100 text-base font-semibold text-foreground shadow-sm transition-opacity hover:bg-transparent hover:opacity-90 md:mt-2 dark:from-neutral-900 dark:to-neutral-950"
             >
               <span>
                 Get Chatarooni{' '}
-                <span className="font-normal text-primary">PRO</span>
+                <span className="font-bold text-primary">PRO</span>
               </span>
             </Button>
           </div>

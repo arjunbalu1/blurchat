@@ -32,26 +32,29 @@
 }
 
 .dark {
-  --background: oklch(0.24 0.008 60);
+  /* Neutrals sit on light mode's warm axis (hue ~72) at lower chroma so the tan
+     brand reads in dark too. Lightness is untouched from the prior ladder, so
+     contrast and the sidebar-recede ordering are unchanged — only hue/chroma. */
+  --background: oklch(0.24 0.018 72);
   --foreground: oklch(0.97 0.01 70);
-  --card: oklch(0.29 0.009 60);
+  --card: oklch(0.29 0.018 72);
   --card-foreground: oklch(0.97 0.01 70);
   /* Clearly darker than --background (0.24) so the sidebar recedes in dark mode. */
-  --sidebar: oklch(0.21 0.008 60);
-  --popover: oklch(0.28 0.009 60);
+  --sidebar: oklch(0.21 0.018 72);
+  --popover: oklch(0.28 0.018 72);
   --popover-foreground: oklch(0.97 0.01 70);
-  --primary: oklch(0.72 0.2 52);
+  --primary: oklch(0.72 0.2 47);
   --primary-foreground: oklch(0.16 0.02 60);
-  --secondary: oklch(0.32 0.013 58);
+  --secondary: oklch(0.32 0.02 72);
   --secondary-foreground: oklch(0.97 0.01 70);
-  --muted: oklch(0.32 0.013 58);
-  --muted-foreground: oklch(0.72 0.02 65);
-  --accent: oklch(0.35 0.025 56);
+  --muted: oklch(0.32 0.02 72);
+  --muted-foreground: oklch(0.72 0.022 72);
+  --accent: oklch(0.35 0.032 72);
   --accent-foreground: oklch(0.97 0.01 70);
-  --destructive: oklch(0.62 0.23 25);
+  --destructive: oklch(0.62 0.23 27);
   --border: oklch(0.97 0.01 70 / 10%);
   --input: oklch(0.97 0.01 70 / 14%);
-  --ring: oklch(0.72 0.2 52);
+  --ring: oklch(0.72 0.2 47);
 }
 
 /* Header grows on tablet/desktop where vertical room is plentiful. */

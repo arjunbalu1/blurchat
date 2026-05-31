@@ -19,7 +19,7 @@ type Tab = 'chat' | 'friends';
 // SidebarTabs) whose height — not the pills' — matches the "Text Chat" header
 // bar, so the divider beneath still lands on the header's bottom border.
 const TAB_BASE =
-  'flex h-8 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors';
+  'flex h-8 items-center justify-center gap-1.5 rounded-md text-base font-medium transition-colors';
 
 // Chat / Friends switcher plus the list area beneath it. The active tab is local
 // state, so the mobile drawer always reopens on "chat" — a clean, consistent
@@ -29,13 +29,13 @@ export function SidebarTabs() {
   const [tab, setTab] = useState<Tab>('chat');
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
       {/* A 48px (3rem) shell — the "Text Chat" header bar's height (h-8 ☰ + py-2)
           — vertically centers a thinner switch. The SHELL's height, not the
           pills', is the alignment anchor: it keeps the divider below on the
           header's bottom border across the drawer seam in every banner state. */}
       <div className="flex h-12 flex-col justify-center">
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted/50 p-1">
+        <div className="grid grid-cols-2 gap-1 p-1">
           <button
             type="button"
             onClick={() => setTab('chat')}
@@ -47,8 +47,8 @@ export function SidebarTabs() {
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            <MessagesSquare className="size-4" />
-            Chat
+            <MessagesSquare className="size-5" />
+            Chats
           </button>
           <button
             type="button"
@@ -61,16 +61,16 @@ export function SidebarTabs() {
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            <Users className="size-4" />
+            <Users className="size-5" />
             Friends
           </button>
         </div>
       </div>
 
       {/* Divider — inset to the switch edges, flush to the 48px shell's bottom
-          (-mt-3 cancels the gap-3). The shell matches the header bar's height, so
+          (-mt-2 cancels the gap-2). The shell matches the header bar's height, so
           this line continues the header's bottom border across the drawer seam. */}
-      <div className="-mt-3 h-px shrink-0 bg-border" />
+      <div className="-mt-2 h-px shrink-0 bg-border" />
 
       {tab === 'chat' ? (
         <>
