@@ -83,9 +83,9 @@ export function SidebarDrawer({
         <DrawerClose asChild>
           <button
             aria-label="Collapse sidebar"
-            className="absolute right-0 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] flex h-10 w-6 translate-x-full items-center justify-center rounded-r-lg border border-l-0 border-border bg-(--sidebar) text-muted-foreground shadow-sm transition-colors hover:text-foreground"
+            className="absolute right-0 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] flex h-10 w-7 translate-x-full items-center justify-center rounded-r-lg border border-l-0 border-border bg-(--sidebar) text-muted-foreground shadow-sm transition-colors hover:text-foreground"
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="size-6" />
           </button>
         </DrawerClose>
       </DrawerContent>
