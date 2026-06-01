@@ -205,10 +205,11 @@ export function AccountSheet({
                   </div>
                 </>
               ) : (
-                // Name + pencil as one centered row: the name truncates and the
-                // pencil is a fixed-size sibling, so the edit button always stays
-                // inside the card (it used to overhang via absolute positioning).
+                // Name optically centered: a spacer matching the edit button
+                // balances it on the left, so the name stays centered while the
+                // pencil sits to its right and never overhangs the card.
                 <div className="flex w-full min-w-0 items-center justify-center gap-1">
+                  <span className="size-8 shrink-0" aria-hidden="true" />
                   <DialogPrimitive.Title asChild>
                     <CardTitle className="min-w-0 truncate text-lg">
                       {shownName}
