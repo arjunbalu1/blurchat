@@ -2,22 +2,23 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { SendHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const MAX_LEN = 2000;
 const MAX_HEIGHT = 160; // ~6 lines, then the textarea scrolls internally
 
 interface ChatComposerProps {
+  disabled?: boolean;
   onSend: (text: string) => void;
 }
 
-export function ChatComposer({ onSend }: ChatComposerProps) {
+export function ChatComposer({ disabled = false, onSend }: ChatComposerProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState('');
 
   // Autogrow: reset to auto so shrinking works, then grow to content up to the
-  // cap. Runs on every value change (typing, send-clear, paste).
+  // cap. Past the cap the textarea scrolls internally (its scrollbar is hidden
+  // below so nothing renders to the right of the send button).
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -25,14 +26,14 @@ export function ChatComposer({ onSend }: ChatComposerProps) {
     el.style.height = `${Math.min(el.scrollHeight, MAX_HEIGHT)}px`;
   }, [value]);
 
-  // The composer only mounts once matched, so focus it the moment it appears.
+  // Focus when the box becomes usable (on start), not while disabled.
   useEffect(() => {
-    ref.current?.focus();
-  }, []);
+    if (!disabled) ref.current?.focus();
+  }, [disabled]);
 
   function submit() {
     const text = value.trim();
-    if (!text) return;
+    if (!text || disabled) return;
     onSend(text);
     setValue('');
   }
@@ -49,37 +50,42 @@ export function ChatComposer({ onSend }: ChatComposerProps) {
   const hasText = value.trim().length > 0;
 
   return (
-    <div className="border-t border-border px-3 py-3">
-      <div className="relative mx-auto max-w-2xl">
-        <textarea
-          ref={ref}
-          rows={1}
-          value={value}
-          maxLength={MAX_LEN}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder="Type a message…"
-          aria-label="Message"
-          className={cn(
-            'w-full resize-none rounded-2xl border border-input bg-transparent py-2 pl-3.5 pr-12 text-sm leading-relaxed shadow-xs outline-none transition-[color,box-shadow]',
-            'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30',
-          )}
-        />
-        {/* Send lives inside the box, bottom-right, and only appears once there's
-            something to send. Pinned to the bottom so it stays in the corner as
-            the textarea grows; pr-12 on the textarea keeps text clear of it. */}
-        {hasText && (
-          <Button
-            type="button"
-            size="icon-sm"
-            onClick={submit}
-            aria-label="Send message"
-            className="absolute bottom-1.5 right-1.5 rounded-full"
-          >
-            <SendHorizontal className="size-4" />
-          </Button>
+    // One box, one control: a borderless textarea on the left and the send
+    // action as a full-height column on the right. items-stretch makes the send
+    // column grow with the box as it gains lines; the icon stays centered. The
+    // textarea's scrollbar is hidden so it never sits beside the send icon.
+    <div
+      className={cn(
+        'flex flex-1 items-stretch overflow-hidden rounded-2xl border border-input bg-transparent shadow-xs transition-[color,box-shadow] dark:bg-input/30',
+        'focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
+        disabled && 'opacity-50',
+      )}
+    >
+      <textarea
+        ref={ref}
+        rows={1}
+        value={value}
+        disabled={disabled}
+        maxLength={MAX_LEN}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={onKeyDown}
+        placeholder={disabled ? 'Chat ended' : 'Type a message…'}
+        aria-label="Message"
+        className={cn(
+          'flex-1 resize-none bg-transparent py-2 pl-3.5 pr-2 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed',
+          '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
         )}
-      </div>
+      />
+      {hasText && !disabled && (
+        <button
+          type="button"
+          onClick={submit}
+          aria-label="Send message"
+          className="flex shrink-0 items-center px-3 text-primary transition-colors hover:text-primary/80"
+        >
+          <SendHorizontal className="size-5" />
+        </button>
+      )}
     </div>
   );
 }

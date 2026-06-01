@@ -1,49 +1,67 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useChatSession } from './use-chat-session';
 import { ChatTranscript } from './chat-transcript';
-import { ChatControls } from './chat-controls';
 import { ChatComposer } from './chat-composer';
 
 // Root of the conversation surface — replaces the placeholder in chat/page.tsx.
 // Owns the session state machine and renders the stage for the current status.
 export function ChatRoom() {
   const session = useChatSession();
-  const { status, next } = session;
+  const { status, start, skip } = session;
+  const chatting = status === 'chatting';
 
-  // Esc skips to a new stranger while chatting (Omegle muscle memory).
+  // The left-of-box control is a two-step confirm while chatting: first
+  // press/Esc arms "Confirm", a second commits the skip. Leaving the chatting
+  // state clears any half-armed confirm.
+  const [confirming, setConfirming] = useState(false);
+
   useEffect(() => {
-    if (status !== 'chatting') return;
+    if (!chatting) {
+      setConfirming(false);
+      return;
+    }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') next();
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      if (confirming) skip();
+      else setConfirming(true);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [status, next]);
+  }, [chatting, confirming, skip]);
 
   if (status === 'idle') {
-    return <IdleHero onStart={session.start} />;
+    return <IdleHero onStart={start} />;
   }
 
-  if (status === 'searching') {
-    return <Searching onCancel={session.cancel} />;
-  }
+  // The single control cycles Skip → Confirm → (skip) → Start → (start) → Skip.
+  const onPrimary = () => {
+    if (!chatting) start();
+    else if (confirming) skip();
+    else setConfirming(true);
+  };
 
-  // chatting | ended
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ChatTranscript items={session.items} partnerTyping={session.partnerTyping} />
-      <ChatControls
-        status={status}
-        onEnd={session.end}
-        onNext={session.next}
-        onLeave={session.leave}
-      />
-      {status === 'chatting' && <ChatComposer onSend={session.send} />}
+      <div className="border-t border-border px-3 py-3">
+        <div className="mx-auto flex max-w-2xl items-end gap-2">
+          <Button
+            type="button"
+            size="lg"
+            variant={!chatting ? 'default' : confirming ? 'destructive' : 'outline'}
+            onClick={onPrimary}
+            className="shrink-0"
+          >
+            {!chatting ? 'Start' : confirming ? 'Confirm' : 'Skip'}
+          </Button>
+          <ChatComposer disabled={!chatting} onSend={session.send} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -71,20 +89,6 @@ function IdleHero({ onStart }: { onStart: () => void }) {
           <span className="relative inline-flex size-2.5 rounded-full bg-primary-foreground" />
         </span>
         Start chatting
-      </Button>
-    </div>
-  );
-}
-
-function Searching({ onCancel }: { onCancel: () => void }) {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
-      <Loader2 className="size-10 animate-spin text-primary" />
-      <p className="text-sm text-muted-foreground">
-        Looking for someone to chat with…
-      </p>
-      <Button variant="outline" size="lg" onClick={onCancel}>
-        Cancel
       </Button>
     </div>
   );
