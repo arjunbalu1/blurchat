@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useChatSession } from './use-chat-session';
@@ -12,12 +13,12 @@ import { ChatComposer } from './chat-composer';
 // Owns the session state machine and renders the stage for the current status.
 export function ChatRoom() {
   const session = useChatSession();
-  const { status, start, skip } = session;
+  const { status, start, cancel, skip } = session;
   const chatting = status === 'chatting';
 
   // The left-of-box control is a two-step confirm while chatting: first
-  // press/Esc arms "Confirm", a second commits the skip. When not chatting, Esc
-  // (and the button) starts/restarts a chat.
+  // press/Esc arms "Confirm", a second commits the skip. Esc also starts (idle/
+  // ended) and cancels the finding animation (searching).
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
@@ -27,13 +28,15 @@ export function ChatRoom() {
       if (status === 'chatting') {
         if (confirming) skip();
         else setConfirming(true);
+      } else if (status === 'searching') {
+        cancel();
       } else {
         start();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [status, confirming, skip, start]);
+  }, [status, confirming, skip, start, cancel]);
 
   // Leaving the chatting state clears any half-armed confirm.
   useEffect(() => {
@@ -42,6 +45,10 @@ export function ChatRoom() {
 
   if (status === 'idle') {
     return <IdleHero onStart={start} />;
+  }
+
+  if (status === 'searching') {
+    return <Searching onCancel={cancel} />;
   }
 
   // The single control cycles Skip → Confirm → (skip) → Start → (start) → Skip.
@@ -113,6 +120,20 @@ function IdleHero({ onStart }: { onStart: () => void }) {
           <span className="relative inline-flex size-2.5 rounded-full bg-primary-foreground" />
         </span>
         Start chatting
+      </Button>
+    </div>
+  );
+}
+
+function Searching({ onCancel }: { onCancel: () => void }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
+      <Loader2 className="size-10 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground">
+        Looking for someone to chat with…
+      </p>
+      <Button variant="outline" size="lg" onClick={onCancel}>
+        Cancel
       </Button>
     </div>
   );

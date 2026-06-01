@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-export type ChatStatus = 'idle' | 'chatting' | 'ended';
+export type ChatStatus = 'idle' | 'searching' | 'chatting' | 'ended';
 
 export interface ChatMessage {
   kind: 'message';
@@ -24,9 +24,16 @@ export interface ChatSession {
   items: TranscriptItem[];
   partnerTyping: boolean;
   start: () => void;
+  cancel: () => void;
   skip: () => void;
   send: (text: string) => void;
 }
+
+// How long the "finding someone…" animation shows before pairing. This timer is
+// the single seam where the real WebSocket takes over: instead of a setTimeout
+// resolving to chatting, a `matched` server event will. No stranger MESSAGES are
+// fabricated — only the lifecycle transition that makes chatting reachable.
+const MATCH_DELAY_MS = 1500;
 
 const newId = () => crypto.randomUUID();
 
@@ -40,23 +47,45 @@ export function useChatSession(): ChatSession {
   const [status, setStatus] = useState<ChatStatus>('idle');
   const [items, setItems] = useState<TranscriptItem[]>([]);
   const [partnerTyping, setPartnerTyping] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Start (or restart) a chat. There's no matchmaker yet — without a backend
-  // this drops straight into chatting (no auto-match / search step). The real WS
-  // will replace this with a `matched` event before flipping to chatting.
-  const start = useCallback(() => {
-    setPartnerTyping(false);
-    setItems([matchedLine()]);
-    setStatus('chatting');
+  const clearTimer = useCallback(() => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
   }, []);
 
+  useEffect(() => clearTimer, [clearTimer]);
+
+  // Start (or restart) a chat: show the finding animation, then land in chatting.
+  // Pressing Start is always required — a skip never auto-rematches.
+  const start = useCallback(() => {
+    clearTimer();
+    setPartnerTyping(false);
+    setItems([]);
+    setStatus('searching');
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      setItems([matchedLine()]);
+      setStatus('chatting');
+    }, MATCH_DELAY_MS);
+  }, [clearTimer]);
+
+  // Bail out of the finding animation back to the idle screen.
+  const cancel = useCallback(() => {
+    clearTimer();
+    setStatus('idle');
+  }, [clearTimer]);
+
   // Leave the current stranger. Clears the transcript and waits for the user to
-  // start a new chat — nothing auto-matches.
+  // press Start again — nothing auto-matches.
   const skip = useCallback(() => {
+    clearTimer();
     setPartnerTyping(false);
     setItems([]);
     setStatus('ended');
-  }, []);
+  }, [clearTimer]);
 
   const send = useCallback((text: string) => {
     const trimmed = text.trim();
@@ -67,5 +96,5 @@ export function useChatSession(): ChatSession {
     ]);
   }, []);
 
-  return { status, items, partnerTyping, start, skip, send };
+  return { status, items, partnerTyping, start, cancel, skip, send };
 }
