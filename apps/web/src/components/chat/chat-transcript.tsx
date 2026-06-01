@@ -39,11 +39,11 @@ export function ChatTranscript({ items, partnerTyping }: ChatTranscriptProps) {
   return (
     <div
       ref={scrollRef}
-      className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
+      className="min-h-0 flex-1 overflow-y-auto px-3 py-4"
       aria-live="polite"
       aria-relevant="additions"
     >
-      <div className="mx-auto flex max-w-2xl flex-col">
+      <div className="flex flex-col">
         {items.map((item, i) => {
           if (item.kind === 'system') {
             return <SystemLine key={item.id} text={item.text} />;
