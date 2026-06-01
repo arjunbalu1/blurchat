@@ -5,7 +5,7 @@ import { SendHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const MAX_LEN = 300;
-const MAX_HEIGHT = 160; // ~6 lines, then the textarea scrolls internally
+const MAX_HEIGHT = 88; // ~3 lines, then the textarea scrolls internally
 
 interface ChatComposerProps {
   disabled?: boolean;
