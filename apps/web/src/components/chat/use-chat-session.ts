@@ -88,11 +88,19 @@ export function useChatSession(): ChatSession {
   }, [clearTimer]);
 
   const send = useCallback((text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
+    // Normalize whitespace so newline/space spam (e.g. mashing Shift+Enter to
+    // make a wall of blank lines) can't blow up the bubble: collapse spaces and
+    // blank-line runs, trim each line, then drop anything left empty.
+    const cleaned = text
+      .split('\n')
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .join('\n')
+      .replace(/\n{2,}/g, '\n')
+      .trim();
+    if (!cleaned) return;
     setItems((prev) => [
       ...prev,
-      { kind: 'message', id: newId(), sender: 'me', text: trimmed },
+      { kind: 'message', id: newId(), sender: 'me', text: cleaned },
     ]);
   }, []);
 
