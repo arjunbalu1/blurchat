@@ -7,6 +7,7 @@ export default [
   ...nx.configs['flat/react-typescript'],
   ...baseConfig,
   {
-    ignores: ['.next/**/*'],
+    // generated build artifacts — gitignored, never hand-edited (see .gitignore)
+    ignores: ['.next/**/*', '.open-next/**/*', '.wrangler/**/*'],
   },
 ];

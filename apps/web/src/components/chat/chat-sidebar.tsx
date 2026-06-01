@@ -2,7 +2,11 @@ import { Button } from '@/components/ui/button';
 import { SidebarProfile } from './sidebar-profile';
 import { SidebarTabs } from './sidebar-tabs';
 
-type SidebarUser = { displayName?: string | null; isAnonymous: boolean };
+type SidebarUser = {
+  displayName?: string | null;
+  publicId: string;
+  isAnonymous: boolean;
+};
 
 // The inner content of the chat sidebar — shared verbatim by the fixed desktop
 // <aside> and the mobile slide-in drawer (see SidebarDrawer). Server component;

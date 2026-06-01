@@ -188,6 +188,28 @@ export const auth = betterAuth({
           };
         },
       },
+      update: {
+        before: async (data) => {
+          // displayName is the only user-editable field (input:true); publicId
+          // and gender are input:false so updateUser can never reach them.
+          // input:true does no validation on its own — enforce it here. Act only
+          // when displayName is in the payload, so other updateUser calls (the
+          // claim flow sets isAnonymous/name/email/image) pass through untouched.
+          const next = data as { displayName?: unknown };
+          if (typeof next.displayName !== 'string') return { data };
+          const displayName = next.displayName.trim().replace(/\s+/g, ' ');
+          const hasControlChar = Array.from(displayName).some((ch) => {
+            const code = ch.charCodeAt(0);
+            return code < 0x20 || code === 0x7f;
+          });
+          if (displayName.length < 3 || displayName.length > 20 || hasControlChar) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'Display name must be 3-20 characters.',
+            });
+          }
+          return { data: { ...data, displayName } };
+        },
+      },
     },
     account: {
       create: {
@@ -323,6 +345,8 @@ export const auth = betterAuth({
     customRules: {
       '/sign-in/email': { window: 60 * 15, max: 20 }, // brute-force gate
       '/request-password-reset': { window: 60 * 60, max: 10 }, // email-spam gate
+      '/sign-in/anonymous': { window: 60 * 10, max: 15 }, // anon-farming / DB-bloat gate
+      '/update-user': { window: 60 * 60, max: 5 }, // display-name rename-spam gate
     },
   },
 

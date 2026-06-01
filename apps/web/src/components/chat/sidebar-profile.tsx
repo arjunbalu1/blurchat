@@ -23,8 +23,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
+import { AccountSheet } from './account-sheet';
 
-type SidebarUser = { displayName?: string | null; isAnonymous: boolean };
+type SidebarUser = {
+  displayName?: string | null;
+  publicId: string;
+  isAnonymous: boolean;
+};
 
 // Bottom-of-sidebar profile bar (Chitchat-style): three borderless buttons —
 // avatar+name (no-op for now), a settings cog (no-op for now), and a ⋯ that
@@ -48,21 +53,29 @@ export function SidebarProfile({ user }: { user: SidebarUser }) {
     // -mx-2 + px-2 makes the top divider full-bleed (cancels ChatSidebar's px-2),
     // matching the header / sidebar borders.
     <div className="-mx-2 flex items-center gap-1 border-t border-border px-2 pt-2">
-      {/* avatar + name + tier — one button (does nothing yet). */}
-      <button
-        type="button"
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-accent active:bg-accent"
+      {/* avatar + name + tier — opens the account sheet. */}
+      <AccountSheet
+        user={{
+          displayName: user.displayName ?? '',
+          publicId: user.publicId,
+          isAnonymous: user.isAnonymous,
+        }}
       >
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-          <UserRound className="size-6" />
-        </span>
-        <span className="min-w-0 flex-1 leading-tight">
-          <span className="block truncate text-sm font-medium">{name}</span>
-          <span className="block truncate text-xs text-muted-foreground">
-            {subtitle}
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-accent active:bg-accent"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+            <UserRound className="size-6" />
           </span>
-        </span>
-      </button>
+          <span className="min-w-0 flex-1 leading-tight">
+            <span className="block truncate text-sm font-medium">{name}</span>
+            <span className="block truncate text-xs text-muted-foreground">
+              {subtitle}
+            </span>
+          </span>
+        </button>
+      </AccountSheet>
 
       {/* settings cog — one button (does nothing yet). */}
       <Button
