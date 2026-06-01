@@ -71,6 +71,18 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Set the theme before first paint. next-themes' own script sits in
+            <body>, so it loses the race to the body-background paint → light
+            flash on load. This runs during <head> parse, ahead of any paint.
+            'dark' unless the user explicitly chose light (matches defaultTheme
+            + enableSystem:false); next-themes takes over on hydration. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var d=localStorage.getItem('theme')!=='light';document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark'}`,
+          }}
+        />
+      </head>
       <body className={`${fontSans.variable} font-sans antialiased`}>
         <script
           type="application/ld+json"
