@@ -57,9 +57,10 @@ export function ChatComposer({
 
   return (
     // One box, one control: a borderless textarea on the left and the send
-    // action as a full-height column on the right. items-stretch makes the send
-    // column grow with the box as it gains lines; the icon stays centered. The
-    // textarea's scrollbar is hidden so it never sits beside the send icon.
+    // action as a column on the right. The box centers a single line; the send
+    // button self-stretches to full height (so it grows with the box). Past the
+    // max height the textarea scrolls — its scrollbar sits to the left of the
+    // send column, clear of the icon.
     <div
       className={cn(
         'flex min-h-10 flex-1 items-center overflow-hidden rounded-md border border-input bg-transparent shadow-xs transition-[color,box-shadow] dark:bg-input/30',
@@ -80,10 +81,7 @@ export function ChatComposer({
         onKeyDown={onKeyDown}
         placeholder={disabled ? 'Chat ended' : 'Type a message…'}
         aria-label="Message"
-        className={cn(
-          'flex-1 resize-none bg-transparent py-2 pl-3.5 pr-2 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed',
-          '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-        )}
+        className="flex-1 resize-none bg-transparent py-2 pl-3.5 pr-2 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
       />
       {hasText && !disabled && (
         <button
