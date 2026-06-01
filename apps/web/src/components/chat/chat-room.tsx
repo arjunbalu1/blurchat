@@ -76,7 +76,7 @@ export function ChatRoom() {
               type="button"
               onClick={onPrimary}
               className={cn(
-                'flex w-20 items-center justify-center outline-none transition-colors',
+                'flex w-16 items-center justify-center whitespace-nowrap outline-none transition-colors',
                 action.cls,
               )}
             >
