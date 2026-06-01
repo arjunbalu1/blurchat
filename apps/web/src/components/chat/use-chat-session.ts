@@ -50,14 +50,11 @@ export function useChatSession(): ChatSession {
     setStatus('chatting');
   }, []);
 
-  // Leave the current stranger. Freezes the transcript and waits for the user to
+  // Leave the current stranger. Clears the transcript and waits for the user to
   // start a new chat — nothing auto-matches.
   const skip = useCallback(() => {
     setPartnerTyping(false);
-    setItems((prev) => [
-      ...prev,
-      { kind: 'system', id: newId(), text: 'You skipped.' },
-    ]);
+    setItems([]);
     setStatus('ended');
   }, []);
 
