@@ -132,7 +132,18 @@ export function AccountSheet({
       <DialogPrimitive.Trigger asChild>{children}</DialogPrimitive.Trigger>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
-        <DialogPrimitive.Content asChild aria-describedby={undefined}>
+        <DialogPrimitive.Content
+          asChild
+          aria-describedby={undefined}
+          onEscapeKeyDown={(event) => {
+            // While editing, Esc cancels the edit only — don't let Radix dismiss
+            // the whole sheet. Otherwise it closes as usual.
+            if (editing) {
+              event.preventDefault();
+              setEditing(false);
+            }
+          }}
+        >
           <Card
             // Same Card as the gate/login; positioned as a flush bottom sheet on
             // mobile, a centered card on sm+ (the gate gets this from its parent
@@ -161,7 +172,6 @@ export function AccountSheet({
                       onChange={(e) => setValue(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleSave();
-                        if (e.key === 'Escape') setEditing(false);
                       }}
                       maxLength={MAX}
                       placeholder="Your name"
