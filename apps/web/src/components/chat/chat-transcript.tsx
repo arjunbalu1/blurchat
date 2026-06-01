@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { TranscriptItem } from './use-chat-session';
 import { MessageBubble } from './message-bubble';
 import { SystemLine } from './system-line';
@@ -12,16 +12,33 @@ interface ChatTranscriptProps {
 }
 
 export function ChatTranscript({ items, partnerTyping }: ChatTranscriptProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Keep the latest content in view. v1 always pins to bottom on new content —
+  const pinToBottom = useCallback(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, []);
+
+  // Pin to the latest content on new items/typing. v1 always pins to bottom —
   // no "scroll up to read history" exception (YAGNI).
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: 'end' });
-  }, [items, partnerTyping]);
+    pinToBottom();
+  }, [items, partnerTyping, pinToBottom]);
+
+  // …and whenever this pane resizes — e.g. the composer grows and shrinks it —
+  // so the newest message is pushed up and stays above the composer instead of
+  // sliding under it.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(pinToBottom);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [pinToBottom]);
 
   return (
     <div
+      ref={scrollRef}
       className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
       aria-live="polite"
       aria-relevant="additions"
@@ -50,7 +67,6 @@ export function ChatTranscript({ items, partnerTyping }: ChatTranscriptProps) {
           );
         })}
         {partnerTyping && <TypingIndicator />}
-        <div ref={bottomRef} />
       </div>
     </div>
   );

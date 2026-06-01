@@ -81,7 +81,7 @@ export function ChatRoom() {
       <ChatTranscript items={session.items} partnerTyping={session.partnerTyping} />
       {/* Mirror the sidebar's bottom rhythm so this top divider lines up with the
           sidebar profile bar's: same pt-2 under the border, same pb float. */}
-      <div className="border-t border-border px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+      <div className="shrink-0 border-t border-border px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
         <div className="flex items-end gap-2">
           {/* Action with an attached ESC hint (the key fires it too). Fixed
               width so swapping the label never resizes and shoves the box; the
