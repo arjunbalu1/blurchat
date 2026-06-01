@@ -46,42 +46,39 @@ export function ChatComposer({ onSend }: ChatComposerProps) {
     }
   }
 
-  const nearLimit = value.length > MAX_LEN - 200;
+  const hasText = value.trim().length > 0;
 
   return (
     <div className="border-t border-border px-3 py-3">
-      <div className="mx-auto flex max-w-2xl items-end gap-2">
-        <div className="relative flex-1">
-          <textarea
-            ref={ref}
-            rows={1}
-            value={value}
-            maxLength={MAX_LEN}
-            onChange={(e) => setValue(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder="Type a message…"
-            aria-label="Message"
-            className={cn(
-              'w-full resize-none rounded-2xl border border-input bg-transparent px-3.5 py-2 text-sm leading-relaxed shadow-xs outline-none transition-[color,box-shadow]',
-              'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30',
-            )}
-          />
-          {nearLimit && (
-            <span className="pointer-events-none absolute bottom-2 right-3 text-xs text-muted-foreground">
-              {value.length}/{MAX_LEN}
-            </span>
+      <div className="relative mx-auto max-w-2xl">
+        <textarea
+          ref={ref}
+          rows={1}
+          value={value}
+          maxLength={MAX_LEN}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder="Type a message…"
+          aria-label="Message"
+          className={cn(
+            'w-full resize-none rounded-2xl border border-input bg-transparent py-2 pl-3.5 pr-12 text-sm leading-relaxed shadow-xs outline-none transition-[color,box-shadow]',
+            'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30',
           )}
-        </div>
-        <Button
-          type="button"
-          size="icon"
-          onClick={submit}
-          disabled={value.trim().length === 0}
-          aria-label="Send message"
-          className="rounded-full"
-        >
-          <SendHorizontal className="size-4" />
-        </Button>
+        />
+        {/* Send lives inside the box, bottom-right, and only appears once there's
+            something to send. Pinned to the bottom so it stays in the corner as
+            the textarea grows; pr-12 on the textarea keeps text clear of it. */}
+        {hasText && (
+          <Button
+            type="button"
+            size="icon-sm"
+            onClick={submit}
+            aria-label="Send message"
+            className="absolute bottom-1.5 right-1.5 rounded-full"
+          >
+            <SendHorizontal className="size-4" />
+          </Button>
+        )}
       </div>
     </div>
   );

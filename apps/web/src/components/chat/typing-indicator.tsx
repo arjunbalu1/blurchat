@@ -5,6 +5,7 @@ export function TypingIndicator() {
     <div className="flex justify-start">
       <div
         className="flex items-center gap-1 rounded-2xl bg-muted px-3.5 py-3"
+        role="status"
         aria-label="Stranger is typing"
       >
         <Dot delay="0ms" />
