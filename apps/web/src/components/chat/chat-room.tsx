@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useChatSession } from './use-chat-session';
 import { ChatTranscript } from './chat-transcript';
 import { ChatComposer } from './chat-composer';
+import { anyModalOpen } from './modal-signal';
 
 // Root of the conversation surface — replaces the placeholder in chat/page.tsx.
 // Owns the session state machine and renders the stage for the current status.
@@ -25,9 +26,9 @@ export function ChatRoom() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      // Don't hijack Esc that belongs to an open modal (e.g. the account sheet)
-      // — let the dialog handle its own edit-cancel / close.
-      if ((e.target as Element | null)?.closest?.('[role="dialog"]')) return;
+      // Don't hijack Esc while a modal (e.g. the account sheet) is open — it owns
+      // Esc for its own edit-cancel / close.
+      if (anyModalOpen()) return;
       e.preventDefault();
       if (status === 'chatting') {
         if (confirming) skip();
