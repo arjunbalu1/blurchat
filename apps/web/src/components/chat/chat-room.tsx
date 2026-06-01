@@ -25,6 +25,9 @@ export function ChatRoom() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
+      // Don't hijack Esc that belongs to an open modal (e.g. the account sheet)
+      // — let the dialog handle its own edit-cancel / close.
+      if ((e.target as Element | null)?.closest?.('[role="dialog"]')) return;
       e.preventDefault();
       if (status === 'chatting') {
         if (confirming) skip();
