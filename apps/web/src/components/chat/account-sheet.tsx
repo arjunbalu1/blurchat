@@ -97,6 +97,13 @@ export function AccountSheet({
   const invalid = normalized.length < MIN || normalized.length > MAX;
   const unchanged = normalized === user.displayName;
 
+  // Guests' names start life as their 36-char publicId — clamp the displayed
+  // name to MAX so it can't sprawl past the card (the full value stays editable).
+  const shownName =
+    user.displayName.length > MAX
+      ? `${user.displayName.slice(0, MAX)}…`
+      : user.displayName;
+
   const handleSave = async () => {
     if (invalid || unchanged || saving) return;
     setSaving(true);
@@ -198,26 +205,24 @@ export function AccountSheet({
                   </div>
                 </>
               ) : (
-                <div className="flex w-full min-w-0 justify-center">
-                  {/* Inner block is only as wide as the name (the button is
-                      absolute, so it adds no width) — centering this block
-                      centers the name, and the pencil overhangs to its right. */}
-                  <div className="relative flex min-w-0 max-w-full items-center">
-                    <DialogPrimitive.Title asChild>
-                      <CardTitle className="min-w-0 truncate text-lg">
-                        {user.displayName}
-                      </CardTitle>
-                    </DialogPrimitive.Title>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label="Edit name"
-                      className="absolute left-full top-1/2 ml-1 -translate-y-1/2 text-muted-foreground"
-                      onClick={() => setEditing(true)}
-                    >
-                      <Pencil className="size-3.5" />
-                    </Button>
-                  </div>
+                // Name + pencil as one centered row: the name truncates and the
+                // pencil is a fixed-size sibling, so the edit button always stays
+                // inside the card (it used to overhang via absolute positioning).
+                <div className="flex w-full min-w-0 items-center justify-center gap-1">
+                  <DialogPrimitive.Title asChild>
+                    <CardTitle className="min-w-0 truncate text-lg">
+                      {shownName}
+                    </CardTitle>
+                  </DialogPrimitive.Title>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label="Edit name"
+                    className="shrink-0 text-muted-foreground"
+                    onClick={() => setEditing(true)}
+                  >
+                    <Pencil className="size-3.5" />
+                  </Button>
                 </div>
               )}
 
