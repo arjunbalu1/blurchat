@@ -47,6 +47,11 @@ skills-lock.json
 out
 next-env.d.ts
 
+# Cloudflare / OpenNext (Workers build output + local state)
+.open-next
+.wrangler
+.dev.vars
+
 # typescript
 *.tsbuildinfo
 

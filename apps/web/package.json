@@ -2,7 +2,17 @@
   "name": "@chatarooni/web",
   "version": "0.0.0",
   "private": true,
+  "scripts": {
+    "build": "next build",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+  },
+  "nx": {
+    "includedScripts": []
+  },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.19.11",
     "better-auth": "^1.6.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -23,6 +33,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "postcss": "^8.5.15",
-    "tailwindcss": "^4.3.0"
+    "tailwindcss": "^4.3.0",
+    "wrangler": "^4.95.0"
   }
 }

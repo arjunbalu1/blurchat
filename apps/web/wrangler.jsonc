@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "chatarooni-web",
+  "compatibility_date": "2025-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "vars": {
+    "OTEL_SERVICE_NAME": "chatarooni-web",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://otlp-gateway-prod-ap-south-1.grafana.net/otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "LOG_LEVEL": "info"
+  },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "chatarooni-web" }],
+  "images": {
+    "binding": "IMAGES"
+  }
+}
