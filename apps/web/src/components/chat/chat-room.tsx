@@ -82,7 +82,7 @@ export function ChatRoom() {
       {/* Mirror the sidebar's bottom rhythm so this top divider lines up with the
           sidebar profile bar's: same pt-2 under the border, same pb float. */}
       <div className="border-t border-border px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           {/* Action with an attached ESC hint (the key fires it too). Fixed
               width so swapping the label never resizes and shoves the box; the
               ESC cap is desktop-only — touch devices have no Esc key. */}
