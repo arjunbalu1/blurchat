@@ -19,10 +19,15 @@ export const userAdditionalFields = {
     unique: true,
     input: false,
   },
+  // User-editable public name. Born as a copy of publicId at creation (set by
+  // databaseHooks.user.create.before), then renamable via updateUser. input:true
+  // unlocks the built-in /update-user endpoint for it; the value is validated +
+  // normalized (3-20 chars) in databaseHooks.user.update.before, since input:true
+  // does no validation on its own. No DB change — input only gates the JS layer.
   displayName: {
     type: 'string' as const,
     required: true,
-    input: false,
+    input: true,
   },
   // 'male' | 'female'. Collected at the /chat gate and ridden in on the
   // signIn.anonymous body; set ONCE in databaseHooks.user.create.before —

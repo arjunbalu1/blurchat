@@ -42,7 +42,11 @@ export default async function ChatPage({
   const isAnonymous = !gated && !justUpgraded && (user?.isAnonymous ?? false);
   const sidebarUser = gated
     ? null
-    : { displayName: user?.displayName ?? null, isAnonymous };
+    : {
+        displayName: user?.displayName ?? null,
+        publicId: user?.publicId ?? '',
+        isAnonymous,
+      };
 
   return (
     <div className="flex h-svh flex-col" data-lock-overscroll>

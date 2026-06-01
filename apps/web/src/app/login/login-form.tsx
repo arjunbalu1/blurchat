@@ -263,7 +263,7 @@ export function LoginForm({ isAnonymous }: { isAnonymous: boolean }) {
   );
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm gap-4 py-5">
       <CardHeader className="text-center">
         <BrandMark href="/" size="md" className="mx-auto mb-2" />
         <CardTitle>Welcome Back!</CardTitle>

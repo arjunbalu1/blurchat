@@ -23,8 +23,7 @@ export function ChatComposer({
   const [value, setValue] = useState('');
 
   // Autogrow: reset to auto so shrinking works, then grow to content up to the
-  // cap. Past the cap the textarea scrolls internally (its scrollbar is hidden
-  // below so nothing renders to the right of the send button).
+  // cap. Past the cap the textarea scrolls internally.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
