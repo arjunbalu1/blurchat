@@ -22,6 +22,7 @@ import { Card, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { closeModal, openModal } from './modal-signal';
 
 const MIN = 3;
 const MAX = 20;
@@ -82,6 +83,14 @@ export function AccountSheet({
     const id = requestAnimationFrame(() => inputRef.current?.select());
     return () => cancelAnimationFrame(id);
   }, [editing, user.displayName]);
+
+  // While the sheet is open, tell the chat's global Esc handler to stand down,
+  // so Esc here cancels the edit / closes the sheet without also skipping.
+  useEffect(() => {
+    if (!open) return;
+    openModal();
+    return () => closeModal();
+  }, [open]);
 
   // Leaving the sheet drops any in-progress edit.
   const onOpenChange = (next: boolean) => {
