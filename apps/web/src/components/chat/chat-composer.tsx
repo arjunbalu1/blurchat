@@ -10,9 +10,15 @@ const MAX_HEIGHT = 160; // ~6 lines, then the textarea scrolls internally
 interface ChatComposerProps {
   disabled?: boolean;
   onSend: (text: string) => void;
+  // Fired on any keystroke — lets the parent disarm a pending skip-confirm.
+  onActivity?: () => void;
 }
 
-export function ChatComposer({ disabled = false, onSend }: ChatComposerProps) {
+export function ChatComposer({
+  disabled = false,
+  onSend,
+  onActivity,
+}: ChatComposerProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState('');
 
@@ -56,7 +62,7 @@ export function ChatComposer({ disabled = false, onSend }: ChatComposerProps) {
     // textarea's scrollbar is hidden so it never sits beside the send icon.
     <div
       className={cn(
-        'flex flex-1 items-stretch overflow-hidden rounded-2xl border border-input bg-transparent shadow-xs transition-[color,box-shadow] dark:bg-input/30',
+        'flex flex-1 items-stretch overflow-hidden rounded-md border border-input bg-transparent shadow-xs transition-[color,box-shadow] dark:bg-input/30',
         'focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
         disabled && 'opacity-50',
       )}
@@ -67,7 +73,10 @@ export function ChatComposer({ disabled = false, onSend }: ChatComposerProps) {
         value={value}
         disabled={disabled}
         maxLength={MAX_LEN}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => {
+          setValue(e.target.value);
+          onActivity?.();
+        }}
         onKeyDown={onKeyDown}
         placeholder={disabled ? 'Chat ended' : 'Type a message…'}
         aria-label="Message"

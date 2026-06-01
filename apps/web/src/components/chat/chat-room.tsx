@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ export function ChatRoom() {
   // press/Esc arms "Confirm", a second commits the skip. Esc also starts (idle/
   // ended) and cancels the finding animation (searching).
   const [confirming, setConfirming] = useState(false);
+  const pillRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -42,6 +43,17 @@ export function ChatRoom() {
   useEffect(() => {
     if (status !== 'chatting') setConfirming(false);
   }, [status]);
+
+  // Once armed, a click anywhere outside the control disarms it (typing does too
+  // — see onActivity). Only a second press on it, or Esc, commits the skip.
+  useEffect(() => {
+    if (!confirming) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!pillRef.current?.contains(e.target as Node)) setConfirming(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [confirming]);
 
   if (status === 'idle') {
     return <IdleHero onStart={start} />;
@@ -68,11 +80,14 @@ export function ChatRoom() {
     <div className="flex min-h-0 flex-1 flex-col">
       <ChatTranscript items={session.items} partnerTyping={session.partnerTyping} />
       <div className="border-t border-border px-3 py-3">
-        <div className="mx-auto flex max-w-2xl items-end gap-2">
+        <div className="flex items-end gap-2">
           {/* Action with an attached ESC hint (the key fires it too). Fixed
               width so swapping the label never resizes and shoves the box; the
               ESC cap is desktop-only — touch devices have no Esc key. */}
-          <div className="flex h-10 shrink-0 items-stretch overflow-hidden rounded-md text-sm font-medium focus-within:ring-2 focus-within:ring-ring/50">
+          <div
+            ref={pillRef}
+            className="flex h-10 shrink-0 items-stretch overflow-hidden rounded-md text-sm font-medium focus-within:ring-2 focus-within:ring-ring/50"
+          >
             <kbd
               aria-hidden="true"
               className="hidden select-none items-center bg-neutral-700 px-2 font-sans text-xs font-semibold tracking-wide text-neutral-100 sm:flex"
@@ -90,7 +105,11 @@ export function ChatRoom() {
               {action.label}
             </button>
           </div>
-          <ChatComposer disabled={!chatting} onSend={session.send} />
+          <ChatComposer
+            disabled={!chatting}
+            onSend={session.send}
+            onActivity={() => setConfirming(false)}
+          />
         </div>
       </div>
     </div>
