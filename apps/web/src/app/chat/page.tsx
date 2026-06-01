@@ -6,6 +6,7 @@ import { BeforeYouStart } from '@/components/before-you-start';
 import { NoticeToast } from '@/components/notice-toast';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
 import { SidebarDrawer } from '@/components/chat/sidebar-drawer';
+import { ChatRoom } from '@/components/chat/chat-room';
 import { BrandMark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 
@@ -86,9 +87,7 @@ export default async function ChatPage({
               Text Chat
             </span>
           </div>
-          <div className="flex flex-1 items-center justify-center px-4 text-center">
-            <p className="text-muted-foreground">Chat goes here.</p>
-          </div>
+          <ChatRoom />
         </main>
       </div>
 
